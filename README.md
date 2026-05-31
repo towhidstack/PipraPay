@@ -43,7 +43,7 @@ New install? Start here: [Getting started](https://help.piprapay.com/hc/categori
 
 <table>
   <tr>
-    <td align="center" width="20%">
+    <td align="center" width="16.66%">
       <a href="https://www.flexohost.com/">
         <picture>
           <source media="(prefers-color-scheme: light)" srcset="https://www.flexohost.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2FFlexoHostHorizontalWhite.b835e24f.png&w=256&q=75">
@@ -51,7 +51,15 @@ New install? Start here: [Getting started](https://help.piprapay.com/hc/categori
         </picture>
       </a>
     </td>
-    <td align="center" width="20%">
+    <td align="center" width="16.66%">
+      <a href="https://hostingoxygen.com/">
+        <picture>
+          <source media="(prefers-color-scheme: light)" srcset="https://panel.hostingoxygen.com/assets/img/logo.png">
+          <img src="https://panel.hostingoxygen.com/assets/img/logo.png" alt="" height="35">
+        </picture>
+      </a>
+    </td>
+    <td align="center" width="16.66%">
       <a href="https://banglahoster.net/">
         <picture>
           <source media="(prefers-color-scheme: light)" srcset="https://banglahoster.net/billing/templates/lagom2/assets/img/logo/logo_big.2060021846.svg">
@@ -59,7 +67,7 @@ New install? Start here: [Getting started](https://help.piprapay.com/hc/categori
         </picture>
       </a>
     </td>
-    <td align="center" width="20%">
+    <td align="center" width="16.66%">
       <a href="https://zenorbd.com/">
         <picture>
           <source media="(prefers-color-scheme: light)" srcset="https://zenorbd.com/storage/2024/12/ZENOR-BD-Logo.png">
@@ -67,7 +75,7 @@ New install? Start here: [Getting started](https://help.piprapay.com/hc/categori
         </picture>
       </a>
     </td>
-    <td align="center" width="20%">
+    <td align="center" width="16.66%">
       <a href="https://hostsite24.com/">
         <picture>
           <source media="(prefers-color-scheme: light)" srcset="https://hostsite24.com/wp-content/uploads/2025/07/WEB-header-logo.png">
@@ -75,7 +83,7 @@ New install? Start here: [Getting started](https://help.piprapay.com/hc/categori
         </picture>
       </a>
     </td>
-    <td align="center" width="20%">
+    <td align="center" width="16.66%">
       <a href="https://dignityhost.com/">
         <picture>
           <source media="(prefers-color-scheme: light)" srcset="https://dignityhost.com/assets/images/logo/logo-dignity-black.svg">
@@ -119,14 +127,6 @@ The official PipraPay Android app is available on the Play Store:
 [Download on Play Store](https://play.google.com/store/apps/details?id=com.qubeplug.billpax_tools)
 
 This app acts as a secure companion tool for PipraPay payment verification and automation.
-
-
-
-
-
-
-
-
 
 
 ## 📖 Documentation
