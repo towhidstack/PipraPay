@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# PipraPay — Coolify production (Build Pack: Dockerfile, Port: 8080)
-# Alternative: leave Build Pack as Nixpacks and use nixpacks.toml instead.
-# Link MariaDB in Coolify so DB_HOST / DB_DATABASE env vars are injected.
+# PipraPay — Dokploy production (Build type: Dockerfile, Port: 8080)
+# See DOKPLOY.md. Link MariaDB and set DB_* in Environment (or use web installer).
 
 FROM php:8.3-fpm-bookworm
 
@@ -50,6 +49,7 @@ COPY . .
 
 RUN mkdir -p pp-media/storage \
     && chmod +x /usr/local/bin/docker-entrypoint.sh \
+        docker/production-start.sh \
         docker/coolify-start.sh \
         docker/write-pp-config-from-env.sh \
     && chown -R www-data:www-data /app

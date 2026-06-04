@@ -1,5 +1,4 @@
-# Coolify/Nixpacks — PHP only (no Node). First build: 5–15 min on VPS (Nix downloads).
-# Faster rebuilds: enable Docker layer cache, or use Build Pack "Dockerfile".
+# Dokploy/Nixpacks — PHP only (no Node). Prefer Dockerfile on Dokploy for faster rebuilds.
 
 providers = ["php"]
 
@@ -16,8 +15,8 @@ nixPkgs = ["...", "php83Extensions.imagick"]
 [phases.install]
 cmds = [
     "mkdir -p pp-media/storage",
-    "chmod +x docker/coolify-start.sh docker/write-pp-config-from-env.sh 2>/dev/null || true",
+    "chmod +x docker/production-start.sh docker/write-pp-config-from-env.sh 2>/dev/null || true",
 ]
 
 [start]
-cmd = "bash /app/docker/coolify-start.sh"
+cmd = "bash /app/docker/production-start.sh"

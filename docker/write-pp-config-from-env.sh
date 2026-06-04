@@ -1,13 +1,13 @@
 #!/bin/bash
-# Write pp-config.php from Coolify linked-database environment variables.
+# Write pp-config.php from platform DB env (Dokploy / Docker Compose).
 
 set -e
 
-DB_HOST="${DB_HOST:-}"
-DB_PORT="${DB_PORT:-3306}"
-DB_USER="${DB_USERNAME:-${DB_USER:-}}"
-DB_PASS="${DB_PASSWORD:-}"
-DB_NAME="${DB_DATABASE:-${DB_NAME:-}}"
+DB_HOST="${DB_HOST:-${MYSQL_HOST:-${MARIADB_HOST:-}}}"
+DB_PORT="${DB_PORT:-${MYSQL_PORT:-${MARIADB_PORT:-3306}}}"
+DB_USER="${DB_USERNAME:-${DB_USER:-${MYSQL_USER:-${MARIADB_USER:-}}}}"
+DB_PASS="${DB_PASSWORD:-${MYSQL_PASSWORD:-${MARIADB_PASSWORD:-}}}"
+DB_NAME="${DB_DATABASE:-${DB_NAME:-${MYSQL_DATABASE:-${MARIADB_DATABASE:-}}}}"
 DB_PREFIX="${DB_PREFIX:-pp_}"
 
 if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
@@ -40,4 +40,4 @@ cat > /app/pp-config.php <<PHP
 PHP
 
 chmod 640 /app/pp-config.php 2>/dev/null || true
-echo "[piprapay] pp-config.php written from Coolify DB env (host=${DB_HOST})"
+echo "[piprapay] pp-config.php written from DB env (host=${DB_HOST})"
