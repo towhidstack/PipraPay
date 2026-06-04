@@ -33,7 +33,8 @@
         $dbname      = $_POST['dbName'] ?? '';
         $username    = $_POST['dbUsername'] ?? '';
         $password    = $_POST['dbPassword'] ?? '';
-        $tablePrefix = $_POST['tablePrefix'] ?? '';
+        $tablePrefix = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['tablePrefix'] ?? '') ?: 'pp_';
+        $confirmDropTables = !empty($_POST['confirm_drop_tables']);
 
         if (!$host || !$dbname || !$username) {
             echo json_encode(['status' => 'false', 'message' => 'Please fill in all required fields.']);
@@ -68,8 +69,29 @@
                 throw new Exception("SQL file not found or empty.");
             }
 
-            if (!empty($tablePrefix) && $tablePrefix !== 'pp_') {
+            if ($tablePrefix !== 'pp_') {
                 $sqlContent = str_replace('pp_', $tablePrefix, $sqlContent);
+            }
+
+            $likePrefix = str_replace(['\\', '_', '%'], ['\\\\', '\\_', '\\%'], $tablePrefix);
+            $existingStmt = $pdo->query("SHOW TABLES LIKE '{$likePrefix}%'");
+            $existingTables = $existingStmt ? $existingStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+
+            if (count($existingTables) > 0) {
+                if (!$confirmDropTables) {
+                    echo json_encode([
+                        'status'  => 'false',
+                        'title'   => 'Database not empty',
+                        'message' => 'Tables such as ' . $existingTables[0] . ' already exist. Tick "Remove existing PipraPay tables and re-import" below, then click Check & Import again — or run DROP DATABASE in MariaDB.',
+                    ]);
+                    exit;
+                }
+
+                $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+                foreach ($existingTables as $tableName) {
+                    $pdo->exec('DROP TABLE IF EXISTS `' . str_replace('`', '``', $tableName) . '`');
+                }
+                $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
             }
 
             $queries = array_filter(array_map('trim', explode(";\n", $sqlContent)));
@@ -419,6 +441,12 @@
                                 </div>
                             </div>
                             <div class="col-12">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirmDropTables" name="confirm_drop_tables" value="1">
+                                    <label class="form-check-label" for="confirmDropTables">
+                                        Remove existing PipraPay tables and re-import (deletes all payment data in this database)
+                                    </label>
+                                </div>
                                 <button type="button" class="btn btn-outline-primary w-100 test-connection-btn" id="btnTestConnection">Check & Import</button>
                             </div>
                         </div>
@@ -643,7 +671,8 @@
                     dbName: $('#dbName').val(),
                     dbUsername: $('#dbUsername').val(),
                     dbPassword: $('#dbPassword').val(),
-                    tablePrefix: $('#tablePrefix').val()
+                    tablePrefix: $('#tablePrefix').val(),
+                    confirm_drop_tables: $('#confirmDropTables').is(':checked') ? 1 : 0
                 };
 
                 btn.html('<span class="spinner-border spinner-border-sm"></span>');
