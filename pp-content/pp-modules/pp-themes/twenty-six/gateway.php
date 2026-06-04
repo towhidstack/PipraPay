@@ -43,18 +43,41 @@
 
     $pp_show_method_switcher = $pp_switchable_count > 1;
 
+    pp_gateway_apply_local_totals($current_gateway_id, $data);
+
     $pp_pay_amount = (float) ($data['transaction']['local_net_amount'] ?? $data['transaction']['amount'] ?? 0);
+
+    if ($pp_pay_amount <= 0) {
+        $pp_pay_amount = (float) ($data['transaction']['amount'] ?? 0);
+    }
+
     $pp_pay_currency = trim((string) ($data['transaction']['local_currency'] ?? $data['transaction']['currency'] ?? 'BDT'));
 
     if ($pp_pay_currency === '' || $pp_pay_currency === '--') {
         $pp_pay_currency = 'BDT';
     }
 
+    $pp_processing_fee = (float) ($data['transaction']['processing_fee'] ?? 0);
+    $pp_discount = (float) ($data['transaction']['discount_amount'] ?? 0);
+    $pp_trx_ref = trim((string) ($data['transaction']['ref'] ?? ''));
+    $pp_brand_name = trim((string) ($data['brand']['name'] ?? ''));
+    $pp_brand_logo = trim((string) ($data['brand']['favicon'] ?? $data['brand']['logo'] ?? ''));
+
     $pp_theme_accent = trim((string) ($data['options']['primary_color'] ?? '#2563eb'));
 
     if ($pp_theme_accent === '' || $pp_theme_accent === '--') {
         $pp_theme_accent = '#2563eb';
     }
+
+    $pp_checkout_address = pp_checkout_address();
+    $pp_all_gateways_url = $pp_checkout_address;
+    $pp_subtotal = (float) ($data['transaction']['amount'] ?? $pp_pay_amount);
+
+    if ($pp_subtotal <= 0) {
+        $pp_subtotal = $pp_pay_amount;
+    }
+
+    $pp_brand_display = $pp_brand_name !== '' ? $pp_brand_name : (string) ($data['brand']['name'] ?? 'Checkout');
 ?>
 
 <!DOCTYPE html>
@@ -96,103 +119,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        .pp-gateway-wrap {
-            max-width: 440px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 1.25rem 1rem 2rem;
-        }
-
-        .pp-gateway-card {
-            background: var(--pp-surface);
-            border: 1px solid var(--pp-border);
-            border-radius: 1.25rem;
-            box-shadow: 0 18px 48px -28px rgba(15, 23, 42, 0.28);
-            overflow: hidden;
-        }
-
-        .pp-gateway-card__body {
-            padding: 1.25rem 1.25rem 1.5rem;
-        }
-
-        .pp-gateway-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-        }
-
-        .pp-icon-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.5rem;
-            height: 2.5rem;
-            border: 1px solid var(--pp-border);
-            border-radius: 9999px;
-            background: #fff;
-            color: var(--pp-primary);
-            cursor: pointer;
-            transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
-        }
-
-        .pp-icon-btn:hover {
-            background: var(--pp-primary-soft);
-            border-color: var(--pp-primary-ring);
-        }
-
-        .pp-icon-btn:active {
-            transform: scale(0.97);
-        }
-
-        .pp-icon-btn svg {
-            width: 1.25rem;
-            height: 1.25rem;
-        }
-
-        .pp-pay-header {
-            text-align: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--pp-border);
-        }
-
-        .pp-pay-header--solo {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .pp-gateway-logo {
-            height: 2.75rem;
-            width: auto;
-            max-width: 160px;
-            object-fit: contain;
-            margin: 0 auto 0.75rem;
-        }
-
-        .pp-pay-header__label {
-            margin: 0 0 0.35rem;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            color: var(--pp-muted);
-            letter-spacing: 0.02em;
-        }
-
-        .pp-pay-header__amount {
-            margin: 0;
-            font-size: 1.75rem;
-            font-weight: 800;
-            line-height: 1.2;
-            color: var(--pp-text);
-            letter-spacing: -0.02em;
-        }
-
-        .pp-pay-header__currency {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--pp-muted);
-        }
-
         .btn-primary,
         .pp-submit-btn {
             --tblr-btn-border-color: transparent;
@@ -206,349 +132,11 @@
             --tblr-btn-active-bg: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.82)?>;
             --tblr-btn-disabled-bg: var(--pp-primary);
             --tblr-btn-disabled-color: var(--pp-on-primary);
-            min-height: 3rem;
-            border-radius: 0.875rem !important;
-            font-weight: 700;
-            letter-spacing: 0.01em;
             box-shadow: 0 10px 24px -14px <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.65)?>;
         }
 
-        .pp-input,
-        .pp-verify-form .form-control {
-            min-height: 3rem;
-            border-radius: 0.75rem;
-            border-color: var(--pp-border);
-            padding-left: 0.9rem;
-            padding-right: 0.9rem;
-            font-size: 1rem;
-        }
+        <?php echo file_get_contents(__DIR__.'/gateway-checkout.css'); ?>
 
-        .pp-input:focus,
-        .pp-verify-form .form-control:focus {
-            border-color: var(--pp-primary);
-            box-shadow: 0 0 0 3px var(--pp-primary-ring);
-        }
-
-        .pp-verify-section {
-            margin-top: 1.25rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid var(--pp-border);
-        }
-
-        .pp-verify-form .form-label {
-            font-size: 0.8125rem;
-            font-weight: 600;
-            color: var(--pp-muted);
-            margin-bottom: 0.4rem;
-        }
-
-        .pp-form-group {
-            margin-bottom: 0.25rem;
-        }
-
-        /* Step-by-step instructions (modern light card) */
-        .payment-instructions.payment-steps {
-            list-style: none;
-            counter-reset: pp-step;
-            margin: 0 0 0;
-            padding: 0;
-            background: #f9fafb;
-            border: 1px solid var(--pp-border);
-            border-radius: 1rem;
-            overflow: hidden;
-            color: var(--pp-text);
-        }
-
-        .payment-instructions.payment-steps li {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            padding: 0.95rem 1rem;
-            word-break: break-word;
-            border-bottom: 1px solid var(--pp-border);
-            counter-increment: pp-step;
-        }
-
-        .payment-instructions.payment-steps li:last-child {
-            border-bottom: none;
-        }
-
-        .payment-instructions.payment-steps li .dot {
-            display: none;
-        }
-
-        .payment-instructions.payment-steps li::before {
-            content: counter(pp-step);
-            flex-shrink: 0;
-            width: 1.75rem;
-            height: 1.75rem;
-            margin-top: 0.1rem;
-            border-radius: 9999px;
-            background: var(--pp-primary);
-            color: var(--pp-on-primary);
-            font-size: 0.75rem;
-            font-weight: 700;
-            line-height: 1.75rem;
-            text-align: center;
-        }
-
-        .payment-instructions.payment-steps li p {
-            margin: 0;
-            flex: 1;
-            font-size: 0.9375rem;
-            line-height: 1.55;
-            color: #374151;
-        }
-
-        .payment-instructions.payment-steps li .dynamic-value {
-            display: inline-block;
-            margin-top: 0.15rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 0.5rem;
-            background: var(--pp-primary-soft);
-            color: var(--pp-primary);
-            font-weight: 700;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.9em;
-            word-break: break-all;
-        }
-
-        .payment-instructions.payment-steps li svg {
-            width: 1rem;
-            height: 1rem;
-        }
-
-        .payment-instructions.payment-steps li .button-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            vertical-align: middle;
-            padding: 0.35rem;
-            margin-left: 0.35rem;
-            background: #fff;
-            color: var(--pp-primary);
-            border: 1px solid var(--pp-primary-ring);
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: background 0.15s ease, transform 0.12s ease;
-        }
-
-        .payment-instructions.payment-steps li .button-icon:hover {
-            background: var(--pp-primary-soft);
-            transform: translateY(-1px);
-        }
-
-        .bp-modal {
-            position: fixed;
-            inset: 0;
-            background: rgb(86 85 85 / 13%);
-            backdrop-filter: blur(6px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            padding: 15px;
-        }
-
-        .bp-modal-content {
-            position: relative;
-            background: #FFFFFF;
-            border-radius: 5px;
-            padding: 10px;
-            max-width: 95vw;
-            max-height: 95vh;
-            box-shadow: 0 00px 5px rgb(157 145 145 / 60%);
-            animation: bpZoomIn 0.25s ease-out;
-        }
-
-        .bp-model-image-b{
-            margin: 20px;
-        }
-
-        #bp-modal-image {
-            display: block;
-            max-width: 300px;
-            border-radius: 10px;
-            width: 100%;
-        }
-
-        .bp-close {
-            position: absolute;
-            top: -12px;
-            right: -12px;
-            width: 36px;
-            height: 36px;
-            background: #ff4d4f;
-            color: #fff;
-            font-size: 22px;
-            font-weight: bold;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 0px 5px rgba(0, 0, 0, 0.4);
-            transition: transform 0.2s ease, background 0.2s ease;
-        }
-
-        .bp-close:hover {
-            background: #ff1f1f;
-            transform: scale(1.1);
-        }
-
-        @keyframes bpZoomIn {
-            from {
-                transform: scale(0.92);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .bp-close {
-                top: -10px;
-                right: -10px;
-                width: 32px;
-                height: 32px;
-                font-size: 20px;
-            }
-        }
-
-        /* Payment method picker */
-        .pp-pay-methods {
-            margin-bottom: 1.25rem;
-            padding: 1rem;
-            border-radius: 1rem;
-            background: var(--pp-bg);
-            border: 1px solid var(--pp-border);
-        }
-
-        .pp-pay-methods__head {
-            margin-bottom: 0.75rem;
-        }
-
-        .pp-pay-methods__title {
-            margin: 0;
-            font-size: 0.8125rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--pp-muted);
-        }
-
-        .pp-pay-methods__hint {
-            margin: 0.25rem 0 0;
-            font-size: 0.75rem;
-            line-height: 1.4;
-            color: #9ca3af;
-        }
-
-        .pp-pay-methods__segments {
-            display: flex;
-            gap: 0.35rem;
-            padding: 0.25rem;
-            margin-bottom: 0.75rem;
-            border-radius: 0.75rem;
-            background: #e2e8f0;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .pp-pay-methods__segment {
-            flex: 1 1 auto;
-            min-width: 0;
-            border: none;
-            border-radius: 0.5rem;
-            background: transparent;
-            color: #64748b;
-            font-size: 0.6875rem;
-            font-weight: 700;
-            padding: 0.5rem 0.55rem;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .pp-pay-methods__segment.is-active {
-            background: #fff;
-            color: var(--pp-text);
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-        }
-
-        .pp-pay-methods__grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0.5rem;
-        }
-
-        @media (max-width: 380px) {
-            .pp-pay-methods__grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        .pp-pay-tile {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 3.5rem;
-            padding: 0.5rem;
-            border: 2px solid #fff;
-            border-radius: 0.75rem;
-            background: #fff;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-            text-decoration: none;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
-        }
-
-        .pp-pay-tile:hover {
-            border-color: var(--pp-border);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-        }
-
-        .pp-pay-tile.is-active {
-            border-color: var(--pp-brand);
-            box-shadow: 0 0 0 1px var(--pp-brand), 0 4px 14px var(--pp-brand-soft);
-            pointer-events: none;
-        }
-
-        .pp-pay-tile img {
-            max-height: 2.125rem;
-            max-width: 100%;
-            object-fit: contain;
-        }
-
-        .pp-pay-tile__check {
-            position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
-            width: 1rem;
-            height: 1rem;
-            color: var(--pp-brand);
-        }
-
-        .pp-pay-tile__check svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .pp-pay-steps__title {
-            margin: 0 0 0.75rem;
-            font-size: 0.8125rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--pp-muted);
-        }
-
-        .pp-pay-steps {
-            margin-top: 0.25rem;
-        }
     </style>
 
     <?php
@@ -590,39 +178,96 @@
     ?>
 </head>
 <body class="pp-gateway-page" style="<?= $bgStyle ?>" loading="lazy">
-    <div class="pp-gateway-wrap">
-        <div class="pp-gateway-card">
-          <div class="pp-gateway-card__body">
-              <div class="pp-gateway-toolbar">
-                  <button type="button" class="pp-icon-btn" onclick="location.href='<?php echo pp_checkout_address();?>'" aria-label="Back">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></svg>
-                  </button>
-                  <button type="button" class="pp-icon-btn" data-bs-target="#modal-language" data-bs-toggle="modal" aria-label="Language">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629"/><path d="M4 6.371h7"/><path d="M5 9c0 2.144 2.252 3.908 6 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/><path d="M6.694 3l.793 .582"/></svg>
-                  </button>
-              </div>
+    <div class="pp-shell">
+        <div class="pp-checkout">
+            <aside class="pp-checkout__aside" aria-label="<?php echo htmlspecialchars($data['lang']['order_summary'], ENT_QUOTES); ?>">
+                <div>
+                    <div class="pp-summary__brand-row">
+                        <?php if ($pp_brand_logo !== ''): ?>
+                            <img src="<?php echo htmlspecialchars($pp_brand_logo, ENT_QUOTES); ?>" alt="" class="pp-summary__logo" width="40" height="40">
+                        <?php endif; ?>
+                        <div>
+                            <p class="pp-summary__brand"><?php echo htmlspecialchars($pp_brand_display, ENT_QUOTES); ?></p>
+                            <p class="pp-summary__secure">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z"/><path d="M12 3a12 12 0 0 0 8.5 3.5"/><path d="M17 11v1a5 5 0 0 1 -10 0v-1"/><path d="M12 19v4"/></svg>
+                                <?php echo $data['lang']['secured_checkout']; ?>
+                            </p>
+                        </div>
+                    </div>
 
-              <div class="pp-pay-header<?php echo $pp_show_method_switcher ? '' : ' pp-pay-header--solo'; ?>">
-                  <?php if (! $pp_show_method_switcher): ?>
-                      <img src="<?php echo htmlspecialchars($gateway_info['gateway']['logo'], ENT_QUOTES);?>" alt="" class="pp-gateway-logo">
-                  <?php endif; ?>
-                  <p class="pp-pay-header__label"><?php echo $data['lang']['complete_payment']; ?></p>
-                  <p class="pp-pay-header__amount">
-                      <?php echo number_format($pp_pay_amount, 2); ?>
-                      <span class="pp-pay-header__currency"><?php echo htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
-                  </p>
-              </div>
+                    <h2 class="pp-summary__heading"><?php echo $data['lang']['order_summary']; ?></h2>
 
-              <?php include __DIR__.'/gateway-switcher.php'; ?>
+                    <ul class="pp-summary__meta">
+                        <?php if ($pp_trx_ref !== ''): ?>
+                            <li>
+                                <span class="pp-summary__meta-label"><?php echo $data['lang']['transaction_ref']; ?></span>
+                                <span class="pp-summary__meta-value"><?php echo htmlspecialchars($pp_trx_ref, ENT_QUOTES); ?></span>
+                            </li>
+                        <?php endif; ?>
+                        <li>
+                            <span class="pp-summary__meta-label"><?php echo $data['lang']['total']; ?></span>
+                            <span class="pp-summary__meta-value"><?php echo number_format($pp_subtotal, 2).' '.htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
+                        </li>
+                        <?php if ($pp_processing_fee > 0): ?>
+                            <li>
+                                <span class="pp-summary__meta-label"><?php echo $data['lang']['processing_fee']; ?></span>
+                                <span class="pp-summary__meta-value"><?php echo number_format($pp_processing_fee, 2).' '.htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
+                            </li>
+                        <?php endif; ?>
+                        <?php if ($pp_discount > 0): ?>
+                            <li>
+                                <span class="pp-summary__meta-label"><?php echo $data['lang']['discount']; ?></span>
+                                <span class="pp-summary__meta-value">−<?php echo number_format($pp_discount, 2).' '.htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
 
-              <div class="pp-pay-steps">
-                  <h3 class="pp-pay-steps__title"><?php echo $data['lang']['how_to_pay']; ?></h3>
-                  <?php pp_gateway_render($_GET['gateway'] ?? '', $data); ?>
-              </div>
-          </div>
+                <div class="pp-summary__total">
+                    <span class="pp-summary__total-label"><?php echo $data['lang']['total_due']; ?></span>
+                    <span class="pp-summary__total-value">
+                        <?php echo number_format($pp_pay_amount, 2); ?>
+                        <span class="pp-summary__total-currency"><?php echo htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
+                    </span>
+                </div>
+            </aside>
+
+            <div class="pp-checkout__main">
+                <div class="pp-main__toolbar">
+                    <button type="button" class="pp-icon-btn" onclick="location.href='<?php echo htmlspecialchars($pp_checkout_address, ENT_QUOTES); ?>'" aria-label="Back">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z"/><path d="M5 12h14"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></svg>
+                    </button>
+                    <button type="button" class="pp-icon-btn" data-bs-target="#modal-language" data-bs-toggle="modal" aria-label="Language">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z"/><path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629"/><path d="M4 6.371h7"/><path d="M5 9c0 2.144 2.252 3.908 6 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/><path d="M6.694 3l.793 .582"/></svg>
+                    </button>
+                </div>
+
+                <div class="pp-main__amount-mobile" aria-live="polite">
+                    <p class="pp-main__amount-label"><?php echo $data['lang']['complete_payment']; ?></p>
+                    <p class="pp-main__amount-value">
+                        <?php echo number_format($pp_pay_amount, 2); ?>
+                        <span><?php echo htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
+                    </p>
+                </div>
+
+                <?php if (! $pp_show_method_switcher): ?>
+                    <div class="pp-main__gateway-badge">
+                        <img src="<?php echo htmlspecialchars($gateway_info['gateway']['logo'], ENT_QUOTES); ?>" alt="">
+                    </div>
+                <?php endif; ?>
+
+                <?php include __DIR__.'/gateway-switcher.php'; ?>
+
+                <section class="pp-pay-steps">
+                    <h3 class="pp-pay-steps__title"><?php echo $data['lang']['how_to_pay']; ?></h3>
+                    <?php pp_gateway_render($_GET['gateway'] ?? '', $data); ?>
+                </section>
+            </div>
         </div>
 
-        <p class="footer-branding text-center text-muted" style="margin-top: 1.25rem; font-size: 0.8125rem;"><?php echo $data['options']['watermark_text'];?></p>
+        <?php if (trim((string) ($data['options']['watermark_text'] ?? '')) !== ''): ?>
+            <p class="pp-footer-note footer-branding"><?php echo $data['options']['watermark_text']; ?></p>
+        <?php endif; ?>
     </div>
 
     <div class="modal fade" id="modal-language" data-bs-keyboard="false" tabindex="-1" aria-labelledby="scrollableLabel" aria-hidden="true">

@@ -2609,6 +2609,71 @@
         ];
     }
 
+    /**
+     * Resolve gateway-local amount, fees, and currency on the transaction payload.
+     */
+    function pp_gateway_apply_local_totals(string $gateway_id, array &$data): bool
+    {
+        global $db_prefix;
+
+        $params = [':gateway_id' => $gateway_id, ':brand_id' => $data['brand']['id']];
+
+        $response_gateway = json_decode(getData($db_prefix.'gateways', 'WHERE gateway_id = :gateway_id AND brand_id = :brand_id AND status = "active"', '* FROM', $params), true);
+
+        if (($response_gateway['status'] ?? false) !== true || empty($response_gateway['response'][0])) {
+            return false;
+        }
+
+        $row = $response_gateway['response'][0];
+        $currencyRates = [];
+
+        $currencyRes = json_decode(getData($db_prefix.'currency', ' WHERE brand_id = "'.$row['brand_id'].'"'), true);
+
+        if (!empty($currencyRes['response'])) {
+            foreach ($currencyRes['response'] as $c) {
+                $currencyRates[$c['code']] = $c['rate'];
+            }
+        }
+
+        $txnAmount = money_sanitize($data['transaction']['amount'] ?? '0');
+        $txnCurrency = $data['transaction']['currency'] ?? 'BDT';
+        $gatewayCurrency = $row['currency'];
+
+        if ($txnCurrency === $gatewayCurrency) {
+            $convertedAmount = $txnAmount;
+        } elseif (isset($currencyRates[$gatewayCurrency])) {
+            $convertedAmount = money_div($txnAmount, $currencyRates[$gatewayCurrency]);
+        } else {
+            $convertedAmount = $txnAmount;
+        }
+
+        $fixed_discount = money_sanitize($row['fixed_discount']);
+        $percentage_discount = money_sanitize($row['percentage_discount']);
+        $fixed_charge = money_sanitize($row['fixed_charge']);
+        $percentage_charge = money_sanitize($row['percentage_charge']);
+
+        $percentageDiscountAmount = money_div(money_mul($convertedAmount, $percentage_discount, 8), '100', 8);
+        $totalDiscount = money_add($fixed_discount, $percentageDiscountAmount, 8);
+
+        $percentageChargeAmount = money_div(money_mul($convertedAmount, $percentage_charge, 8), '100', 8);
+        $totalProcessingFee = money_add($fixed_charge, $percentageChargeAmount, 8);
+
+        $convertedAmount = money_add(money_sub($convertedAmount, $totalDiscount, 8), $totalProcessingFee, 8);
+
+        if ($txnCurrency !== $gatewayCurrency && isset($currencyRates[$gatewayCurrency])) {
+            $totalDiscount = money_mul($totalDiscount, $currencyRates[$gatewayCurrency], 8);
+            $totalProcessingFee = money_mul($totalProcessingFee, $currencyRates[$gatewayCurrency], 8);
+        }
+
+        $data['transaction']['amount'] = money_round($txnAmount, 2);
+        $data['transaction']['processing_fee'] = money_round($totalProcessingFee, 2);
+        $data['transaction']['discount_amount'] = money_round($totalDiscount, 2);
+        $data['transaction']['local_net_amount'] = money_round($convertedAmount, 2);
+        $data['transaction']['local_currency'] = $gatewayCurrency;
+
+        return true;
+    }
+
     function pp_gateway_render($gateway_id = '', $data = []){
         global $db_prefix;
 
@@ -2658,54 +2723,7 @@
 
             $data['gateway'] = $gatewayInfo;
 
-            $currencyRates = [];
-
-            $currencyRes = json_decode(getData($db_prefix.'currency', ' WHERE brand_id = "'.$response_gateway['response'][0]['brand_id'].'"'), true);
-
-            if (!empty($currencyRes['response'])) {
-                foreach ($currencyRes['response'] as $c) {
-                    $currencyRates[$c['code']] =$c['rate'];
-                }
-            }
-
-            $txnAmount  = money_sanitize($data['transaction']['amount']);
-            $txnCurrency = $data['transaction']['currency'];
-            $gatewayCurrency = $response_gateway['response'][0]['currency'];
-
-            if ($txnCurrency === $gatewayCurrency) {
-                $convertedAmount = $txnAmount;
-            } else {
-                if (isset($currencyRates[$gatewayCurrency])) {
-                    $convertedAmount = money_div($txnAmount, $currencyRates[$gatewayCurrency]);
-                } else {
-                    $convertedAmount = "0";
-                }
-            }
-
-            $fixed_discount = money_sanitize($response_gateway['response'][0]['fixed_discount']);
-            $percentage_discount = money_sanitize($response_gateway['response'][0]['percentage_discount']);
-
-            $fixed_charge = money_sanitize($response_gateway['response'][0]['fixed_charge']);
-            $percentage_charge = money_sanitize($response_gateway['response'][0]['percentage_charge']);
-
-            $percentageDiscountAmount = money_div(money_mul($convertedAmount, $percentage_discount, 8), "100", 8);
-            $totalDiscount = money_add($fixed_discount, $percentageDiscountAmount, 8);
-
-            $percentageChargeAmount = money_div(money_mul($convertedAmount, $percentage_charge, 8), "100", 8);
-            $totalProcessingFee = money_add($fixed_charge, $percentageChargeAmount, 8);
-
-            $convertedAmount = money_add(money_sub($convertedAmount, $totalDiscount, 8), $totalProcessingFee, 8);
-
-            if ($txnCurrency !== $gatewayCurrency && isset($currencyRates[$gatewayCurrency])) {
-                $totalDiscount = money_mul($totalDiscount, $currencyRates[$gatewayCurrency], 8);
-                $totalProcessingFee = money_mul($totalProcessingFee, $currencyRates[$gatewayCurrency], 8);
-            }
-
-            $data['transaction']['amount'] = money_round($txnAmount, 2);
-            $data['transaction']['processing_fee'] = money_round($totalProcessingFee, 2);
-            $data['transaction']['discount_amount'] = money_round($totalDiscount, 2);
-            $data['transaction']['local_net_amount'] = money_round($convertedAmount, 2);
-            $data['transaction']['local_currency'] = $gatewayCurrency;
+            pp_gateway_apply_local_totals($gateway_id, $data);
 
             if(file_exists(__DIR__.'/../pp-modules/pp-gateways/'.$response_gateway['response'][0]['slug'].'/class.php')){
                 require_once __DIR__.'/../pp-modules/pp-gateways/'.$response_gateway['response'][0]['slug'].'/class.php';
@@ -2933,6 +2951,14 @@
                 'ur' => 'جمع کریں',
                 'ar' => 'إرسال',
             ];
+
+            $lang_text['tap_to_enlarge_qr'] = [
+                'en' => 'Tap QR to enlarge',
+                'bn' => 'বড় করে দেখতে QR-এ ট্যাপ করুন',
+                'hi' => 'बड़ा करने के लिए QR पर टैप करें',
+                'ur' => 'بڑا دیکھنے کے لیے QR پر ٹیپ کریں',
+                'ar' => 'اضغط على QR للتكبير',
+            ];
             
             $language = resolveModuleLanguage($data['brand']['locale']['language'],$supported_languages);
 
@@ -2966,10 +2992,25 @@
                         }
                     }
 
-                    echo '<li class="li-'.$rowli.'">';
+                    $pp_qr_src = '';
+                    $pp_has_qr = false;
+
+                    if (!empty($step['action']['type']) && $step['action']['type'] === 'image') {
+                        if (!empty($step['action']['value'])) {
+                            $pp_qr_src = (string) $step['action']['value'];
+                            $pp_has_qr = true;
+                        } else {
+                            echo '<style>.li-'.$rowli.'{display: none !important;}</style>';
+                        }
+                    }
+
+                    $pp_li_class = 'li-'.$rowli.($pp_has_qr ? ' pp-step--has-qr' : '');
+
+                    echo '<li class="'.$pp_li_class.'">';
                     echo ($step['icon'] == "") ? '<div class="dot"></div>' : $step['icon'];
 
-                    echo '<p>';
+                    echo '<div class="pp-step__content">';
+                    echo '<p class="pp-step__text">';
                     echo $text;
 
                     /* Copy button */
@@ -2985,21 +3026,21 @@
                         </span>';
                     }
 
-                    /* Action button */
-                    if (!empty($step['action'])) {
-                        $action = $step['action'];
+                    echo '</p>';
 
-                        if ($action['type'] === 'image' && !empty($action['value'])) {
-                            echo ' <span class="button-icon"
-                                onclick="pp_show_image(\''.htmlspecialchars($action['value'], ENT_QUOTES).'\')">
-                                '.$action['label'].'
-                            </span>';
-                        }else{
-                            echo '<style>.li-'.$rowli.'{display: none !important;}</style>';
-                        }
+                    if ($pp_has_qr) {
+                        $pp_qr_esc = htmlspecialchars($pp_qr_src, ENT_QUOTES);
+                        $pp_qr_hint = htmlspecialchars($lang['tap_to_enlarge_qr'] ?? 'Tap QR to enlarge', ENT_QUOTES);
+
+                        echo '<div class="pp-qr-inline">';
+                        echo '<button type="button" class="pp-qr-inline__frame" onclick="pp_show_image(\''.$pp_qr_esc.'\')" aria-label="'.$pp_qr_hint.'">';
+                        echo '<img src="'.$pp_qr_esc.'" alt="" width="200" height="200" loading="lazy" decoding="async">';
+                        echo '</button>';
+                        echo '<span class="pp-qr-inline__hint">'.$pp_qr_hint.'</span>';
+                        echo '</div>';
                     }
 
-                    echo '</p>';
+                    echo '</div>';
                     echo '</li>';
 
                 }
@@ -3007,10 +3048,11 @@
                 echo '</ol>';
 
                 echo '
-                    <div id="pp-image-modal" class="pp-modal" style="display:none;">
+                    <div id="pp-image-modal" class="pp-modal" style="display:none;" role="dialog" aria-modal="true" aria-label="QR code">
+                        <div class="pp-modal__backdrop" onclick="pp_close_image()"></div>
                         <div class="pp-modal-content">
-                            <span class="pp-close" onclick="pp_close_image()">&times;</span>
-                            <div class="pp-model-image-b"><img id="pp-modal-image" src="" alt="Preview"></div>
+                            <button type="button" class="pp-close" onclick="pp_close_image()" aria-label="Close">&times;</button>
+                            <div class="pp-model-image-b"><img id="pp-modal-image" src="" alt="QR code"></div>
                         </div>
                     </div>
 
@@ -3018,14 +3060,26 @@
                         function pp_show_image(src) {
                             const modal = document.getElementById("pp-image-modal");
                             const img = document.getElementById("pp-modal-image");
+                            if (!modal || !img) return;
 
                             img.src = src;
                             modal.style.display = "flex";
+                            document.body.style.overflow = "hidden";
                         }
 
                         function pp_close_image() {
-                            document.getElementById("pp-image-modal").style.display = "none";
+                            const modal = document.getElementById("pp-image-modal");
+                            if (!modal) return;
+
+                            modal.style.display = "none";
+                            document.body.style.overflow = "";
                         }
+
+                        document.addEventListener("keydown", function (e) {
+                            if (e.key === "Escape") {
+                                pp_close_image();
+                            }
+                        });
                     </script>
                 ';
             }
