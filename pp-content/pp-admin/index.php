@@ -556,6 +556,17 @@
         (function () {
             const choicesInstances = new Map();
 
+            window.resetChoicesInstances = function () {
+                choicesInstances.forEach((instance) => {
+                    try {
+                        instance.destroy();
+                    } catch (e) {
+                        /* ignore */
+                    }
+                });
+                choicesInstances.clear();
+            };
+
             window.initChoices = function (selector = '.js-select') {
                 document.querySelectorAll(selector).forEach(select => {
 
@@ -579,6 +590,29 @@
             };
 
             document.addEventListener('DOMContentLoaded', () => initChoices());
+
+            document.addEventListener('shown.bs.modal', function (event) {
+                const modal = event.target;
+                if (!modal?.querySelectorAll) {
+                    return;
+                }
+                modal.querySelectorAll('.js-select').forEach((select) => {
+                    if (choicesInstances.has(select)) {
+                        return;
+                    }
+                    const isMultiple = select.hasAttribute('multiple');
+                    const instance = new Choices(select, {
+                        removeItemButton: select.dataset.remove === 'true' && isMultiple,
+                        searchEnabled: select.dataset.search !== 'false',
+                        shouldSort: false,
+                        placeholder: true,
+                        placeholderValue: select.dataset.placeholder || 'Select option',
+                        searchPlaceholderValue: 'Search...',
+                        allowHTML: false,
+                    });
+                    choicesInstances.set(select, instance);
+                });
+            });
         })();
 
         function initInvoiceCustomer() {
@@ -999,13 +1033,16 @@
             .then(html => {
                 $('.root-print').html(html);
 
+                if (typeof resetChoicesInstances === 'function') {
+                    resetChoicesInstances();
+                }
+
                 initHugeRTE();
 
                 initInvoiceCustomer();
 
                 initToolTips();
 
-                initChoices();             
                 initChoices('.js-select');
 
                 initTags();

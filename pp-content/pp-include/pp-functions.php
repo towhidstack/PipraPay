@@ -89,6 +89,55 @@
         return piprapay_write_db_config_file($host, $port, $user, $pass, $name, $prefix);
     }
 
+    function piprapay_gateway_modules_dir(): string {
+        return dirname(__DIR__) . '/pp-modules/pp-gateways';
+    }
+
+    function piprapay_gateway_class_name_from_slug(string $slug): string {
+        return str_replace(' ', '', ucwords(str_replace('-', ' ', $slug))) . 'Gateway';
+    }
+
+    /**
+     * Installable gateway modules (filesystem). Does not query the database.
+     *
+     * @return array<string, string> slug => display title
+     */
+    function piprapay_discover_installable_gateways(): array {
+        $gateways = [];
+        $dirs = glob(piprapay_gateway_modules_dir() . '/*', GLOB_ONLYDIR) ?: [];
+
+        foreach ($dirs as $dir) {
+            if (!is_file($dir . '/class.php')) {
+                continue;
+            }
+
+            $slug = basename($dir);
+            $title = ucwords(str_replace('-', ' ', $slug));
+
+            try {
+                require_once $dir . '/class.php';
+                $class = piprapay_gateway_class_name_from_slug($slug);
+                if (class_exists($class)) {
+                    $obj = new $class();
+                    if (method_exists($obj, 'info')) {
+                        $info = $obj->info();
+                        if (!empty($info['title'])) {
+                            $title = (string) $info['title'];
+                        }
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log('piprapay gateway discover skipped ' . $slug . ': ' . $e->getMessage());
+            }
+
+            $gateways[$slug] = $title;
+        }
+
+        asort($gateways);
+
+        return $gateways;
+    }
+
     /**
      * True when the client request is HTTPS (direct TLS or reverse proxy headers).
      */

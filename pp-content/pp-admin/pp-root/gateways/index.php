@@ -231,34 +231,13 @@
                 <label class="form-label">Gateway <span class="text-danger">*</span></label>
                 <select class="js-select" name="gateway" data-search="true" data-remove="true" data-placeholder="Select gateway" required>
                     <?php
-                        $gateways = [];
+                        $installableGateways = function_exists('piprapay_discover_installable_gateways')
+                            ? piprapay_discover_installable_gateways()
+                            : [];
 
-                        $gatewayDirs = glob(__DIR__ . '/../../../pp-modules/pp-gateways/*', GLOB_ONLYDIR);
-
-                        foreach ($gatewayDirs as $dir) {
-
-                            if (!file_exists($dir . '/class.php')) {
-                                continue;
-                            }
-
-                            require_once $dir . '/class.php';
-
-                            $slug = basename($dir);
-
-                            // twenty-six → TwentySixTheme
-                            $class = str_replace(' ', '', ucwords(str_replace('-', ' ', $slug))) . 'Gateway';
-
-                            if (!class_exists($class)) {
-                                continue;
-                            }
-
-                            $gatewayObj = new $class();
-                            $gateways[$slug] = $gatewayObj->info();
-                        }
-
-                        foreach ($gateways as $slug => $gateway) {
+                        foreach ($installableGateways as $slug => $title) {
                     ?>
-                            <option value="<?php echo $slug?>"><?php echo $gateway['title']?></option>
+                            <option value="<?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></option>
                     <?php
                         }
                     ?>
