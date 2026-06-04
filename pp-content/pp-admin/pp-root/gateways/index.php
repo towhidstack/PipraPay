@@ -281,7 +281,7 @@
 
                 $.ajax({
                     type: 'POST',
-                    url: '<?php echo $site_url.$path_admin ?>/dashboard',
+                    url: window.PIPRAPAY_DASHBOARD_API || '/',
                     data: {action: "gateways-bulk-action", csrf_token: csrf_token_default, actionID: actionID, selected_ids: JSON.stringify(selectedRows)},
                     dataType: 'json',
                     success: function (response) {
@@ -383,7 +383,7 @@
 
             $.ajax({
                 type: 'POST',
-                url: '<?php echo $site_url.$path_admin ?>/dashboard',
+                url: window.PIPRAPAY_DASHBOARD_API || '/',
                 data: {action: "gateways-delete", csrf_token: csrf_token_default, ItemID: ItemID},
                 dataType: 'json',
                 success: function (response) {
@@ -454,7 +454,7 @@
 
         $.ajax({
             type: 'POST',
-            url: '<?php echo $site_url.$path_admin ?>/dashboard',
+            url: window.PIPRAPAY_DASHBOARD_API || '/',
             data: {action: "gateways-list", csrf_token: csrf_token_default, search_input: search_input, show_limit: show_limit, tabType: tabType, page: page, filter_status: filter_status, filter_start: filter_start, filter_end: filter_end},
             dataType: 'json',
             success: function (res) {
@@ -640,7 +640,7 @@
 
             $.ajax({
                 type: 'POST',
-                url: '<?php echo $site_url.$path_admin ?>/dashboard',
+                url: window.PIPRAPAY_DASHBOARD_API || '/',
                 data: {action: "gateway-create", csrf_token: csrf_token_default, gateway: gateway},
                 dataType: 'json',
                 success: function (response) {

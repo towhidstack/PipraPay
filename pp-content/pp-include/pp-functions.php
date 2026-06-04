@@ -112,25 +112,8 @@
             }
 
             $slug = basename($dir);
-            $title = ucwords(str_replace('-', ' ', $slug));
-
-            try {
-                require_once $dir . '/class.php';
-                $class = piprapay_gateway_class_name_from_slug($slug);
-                if (class_exists($class)) {
-                    $obj = new $class();
-                    if (method_exists($obj, 'info')) {
-                        $info = $obj->info();
-                        if (!empty($info['title'])) {
-                            $title = (string) $info['title'];
-                        }
-                    }
-                }
-            } catch (Throwable $e) {
-                error_log('piprapay gateway discover skipped ' . $slug . ': ' . $e->getMessage());
-            }
-
-            $gateways[$slug] = $title;
+            // List from filesystem only — avoids loading 48 gateway classes on every page render.
+            $gateways[$slug] = ucwords(str_replace('-', ' ', $slug));
         }
 
         asort($gateways);

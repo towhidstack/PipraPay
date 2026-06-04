@@ -546,6 +546,11 @@
     <script src="https://cdn.jsdelivr.net/npm/hugerte@1/hugerte.min.js"></script>
     
     <input type="hidden" name="csrf_token_default" value="<?= $csrf_token; ?>">
+
+    <script data-cfasync="false">
+        // Same-origin API: adapter handles $_POST['action'] on POST / (avoids /admin/dashboard cookie/HTTPS issues).
+        window.PIPRAPAY_DASHBOARD_API = '/';
+    </script>
     
     <script data-cfasync="false">
         //all declaration#
