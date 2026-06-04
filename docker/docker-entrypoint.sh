@@ -6,9 +6,15 @@ export PORT
 
 envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
-bash /app/docker/write-pp-config-from-env.sh || true
-
 mkdir -p /app/pp-media/storage
+# Restore DB config from Dokploy volume before optional env auto-write
+# shellcheck source=/app/docker/piprapay-config-persist.sh
+source /app/docker/piprapay-config-persist.sh
+piprapay_restore_config
+
+bash /app/docker/write-pp-config-from-env.sh || true
+piprapay_persist_config
+
 chown -R www-data:www-data /app/pp-media/storage
 
 if [ -f /app/pp-config.php ]; then

@@ -221,6 +221,12 @@
                 piprapay_install_json_error('Failed to create final config file. Ensure /app is writable by PHP.');
             }
 
+            $storedConfig = __DIR__ . '/../../pp-media/storage/.pp-config.php';
+            if (!is_dir(dirname($storedConfig))) {
+                @mkdir(dirname($storedConfig), 0755, true);
+            }
+            @copy($finalFile, $storedConfig);
+
             @unlink($tempFile);
 
             echo json_encode(['status' => 'true', 'message' => 'Install Completed.']);

@@ -76,11 +76,53 @@ Redeploy — `pp-config.php` is written on start.
 
 ---
 
-## 4. Volumes
+## 4. Volumes (required for config + uploads)
 
 | Mount | Purpose |
 |-------|---------|
-| `/app/pp-media/storage` | uploads, QR, media |
+| `/app/pp-media/storage` | uploads, QR, media, **and** `.pp-config.php` backup |
+
+### Why the installer appears after every redeploy
+
+PipraPay stores DB credentials in `/app/pp-config.php` inside the **app container**. Redeploy replaces that container — the file is gone. **MariaDB data is not deleted**; only the small config file was lost.
+
+Fix (pick one or both):
+
+1. **Volume** — mount `/app/pp-media/storage` (above). On install complete, config is copied to `pp-media/storage/.pp-config.php` and restored on next container start.
+2. **Environment** — set `PIPRAPAY_AUTO_DB_CONFIG=1` and all `DB_*` vars so config is recreated on every start (see §3).
+
+Without volume or env, you will see Step 1 (Requirements) again even though the database still has your admin and gateways.
+
+### Tables exist but installer Step 2 appears
+
+That is normal when **`pp-config.php` is missing** in the container. PipraPay does not check “tables exist” to skip install — it only checks for `pp-config.php`.
+
+- **Do not** click Check & Import again unless you intend to wipe data (leave “Remove existing tables” **unchecked**).
+- Set env below, redeploy, then open **`/login`** (admin already in DB).
+- If you see **500**: open `/pp-health.php` — often wrong `DB_PASSWORD`, wrong `DB_HOST`, or MariaDB auth plugin (see `app/DOKPLOY.md` § MariaDB authentication).
+
+### Env checklist (must all be set, then **Redeploy**)
+
+```env
+PIPRAPAY_APP_URL=https://pay.taqwamart.bd
+PIPRAPAY_AUTO_DB_CONFIG=1
+DB_HOST=<exact Internal Host from MariaDB Connection tab>
+DB_PORT=3306
+DB_DATABASE=piprapaydb
+DB_USERNAME=mariadb
+DB_PASSWORD=<real password, no quotes>
+DB_PREFIX=pp_
+PORT=8080
+```
+
+Deploy logs should show: `[piprapay] pp-config.php ready (env or volume)`
+
+Terminal check:
+
+```bash
+ls -la /app/pp-config.php
+cat /app/pp-config.php
+```
 
 ---
 

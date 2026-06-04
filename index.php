@@ -38,6 +38,8 @@
         }
     }
 
+    piprapay_bootstrap_config_from_env();
+
     if(file_exists(__DIR__ . '/pp-content/pp-include/pp-adapter.php')){
         if (isset($pp_adapter_loaded)) {
 

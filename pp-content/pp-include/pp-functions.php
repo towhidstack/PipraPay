@@ -12,6 +12,83 @@
 
     $pp_functions_loaded = true;
 
+    function piprapay_config_store_path(): string {
+        return dirname(__DIR__, 2) . '/pp-media/storage/.pp-config.php';
+    }
+
+    /**
+     * Write pp-config.php (safe for special characters in DB password).
+     */
+    function piprapay_write_db_config_file(
+        string $host,
+        string $port,
+        string $user,
+        string $pass,
+        string $name,
+        string $prefix = 'pp_'
+    ): bool {
+        $root = dirname(__DIR__, 2);
+        $configFile = $root . '/pp-config.php';
+        $content = '<?php' . "\n"
+            . '    $db_host = ' . var_export($host, true) . ";\n"
+            . '    $db_port = ' . var_export($port, true) . ";\n"
+            . '    $db_user = ' . var_export($user, true) . ";\n"
+            . '    $db_pass = ' . var_export($pass, true) . ";\n"
+            . '    $db_name = ' . var_export($name, true) . ";\n"
+            . '    $db_prefix = ' . var_export($prefix, true) . ";\n"
+            . '?>' . "\n";
+
+        if (@file_put_contents($configFile, $content) === false) {
+            return false;
+        }
+
+        $stored = piprapay_config_store_path();
+        if (!is_dir(dirname($stored))) {
+            @mkdir(dirname($stored), 0755, true);
+        }
+        @copy($configFile, $stored);
+
+        return true;
+    }
+
+    /**
+     * Restore or create pp-config.php from volume backup or Dokploy env (PIPRAPAY_AUTO_DB_CONFIG=1).
+     */
+    function piprapay_bootstrap_config_from_env(): bool {
+        $root = dirname(__DIR__, 2);
+        $configFile = $root . '/pp-config.php';
+
+        if (is_file($configFile)) {
+            return true;
+        }
+
+        $stored = piprapay_config_store_path();
+        if (is_readable($stored) && @copy($stored, $configFile)) {
+            return true;
+        }
+
+        if (is_file($root . '/pp-temp-config.php')) {
+            return false;
+        }
+
+        if (getenv('PIPRAPAY_AUTO_DB_CONFIG') !== '1' && getenv('PIPRAPAY_REGENERATE_DB_CONFIG') !== '1') {
+            return false;
+        }
+
+        $host = getenv('DB_HOST') ?: getenv('MYSQL_HOST') ?: getenv('MARIADB_HOST') ?: '';
+        $port = getenv('DB_PORT') ?: getenv('MYSQL_PORT') ?: getenv('MARIADB_PORT') ?: '3306';
+        $user = getenv('DB_USERNAME') ?: getenv('DB_USER') ?: getenv('MYSQL_USER') ?: getenv('MARIADB_USER') ?: '';
+        $pass = getenv('DB_PASSWORD') ?: getenv('MYSQL_PASSWORD') ?: getenv('MARIADB_PASSWORD') ?: '';
+        $name = getenv('DB_DATABASE') ?: getenv('DB_NAME') ?: getenv('MYSQL_DATABASE') ?: getenv('MARIADB_DATABASE') ?: '';
+        $prefix = getenv('DB_PREFIX') ?: 'pp_';
+
+        if ($host === '' || $name === '' || $user === '') {
+            return false;
+        }
+
+        return piprapay_write_db_config_file($host, $port, $user, $pass, $name, $prefix);
+    }
+
     /**
      * True when the client request is HTTPS (direct TLS or reverse proxy headers).
      */
