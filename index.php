@@ -393,6 +393,27 @@
                             exit;
                         }
 
+                        // Laravel SDK / hosted merchant API aliases (self-hosted uses checkout/redirect).
+                        if ($api_type === 'verify-payments') {
+                            $api_type = 'verify-payment';
+                        }
+
+                        if ($api_type === 'create-charge') {
+                            $contact = trim((string) ($data['email_mobile'] ?? ''));
+                            $mobile = preg_replace('/\D+/', '', $contact) ?: $contact;
+                            $email = filter_var($contact, FILTER_VALIDATE_EMAIL)
+                                ? $contact
+                                : (($mobile !== '') ? $mobile.'@checkout.local' : '');
+
+                            $data['full_name'] = trim((string) ($data['full_name'] ?? '')) ?: 'Customer';
+                            $data['email_address'] = $email;
+                            $data['mobile_number'] = $mobile;
+                            $data['return_url'] = (string) ($data['redirect_url'] ?? '--');
+
+                            $api_type = 'checkout';
+                            $segments[2] = 'redirect';
+                        }
+
                         if($api_type == "checkout"){
                             $api_scopes = $response_api['response'][0]['api_scopes'] ?? [];
                             if (is_string($api_scopes)) {
