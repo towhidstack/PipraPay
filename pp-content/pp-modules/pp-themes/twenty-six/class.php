@@ -465,6 +465,78 @@
                     'ar' => 'اختر محفظة أو بنكًا آخر عند الحاجة',
                 ],
 
+                'pay_with_amount' => [
+                    'en' => 'Pay {amount} {currency}',
+                    'bn' => '{amount} {currency} পরিশোধ করুন',
+                    'hi' => '{amount} {currency} भुगतान करें',
+                    'ur' => '{amount} {currency} ادا کریں',
+                    'ar' => 'ادفع {amount} {currency}',
+                ],
+
+                'secured_by_brand' => [
+                    'en' => 'Secured by {brand}',
+                    'bn' => '{brand} দ্বারা সুরক্ষিত',
+                    'hi' => '{brand} द्वारा सुरक्षित',
+                    'ur' => '{brand} کے ذریعے محفوظ',
+                    'ar' => 'مؤمّن بواسطة {brand}',
+                ],
+
+                'terms_notice' => [
+                    'en' => 'By clicking the Pay button you agree to our {terms} which is limited to facilitating your payment to {brand}.',
+                    'bn' => 'পে বাটনে ক্লিক করে আপনি আমাদের {terms}-এ সম্মত হন, যা শুধু {brand}-এ আপনার পেমেন্ট সহজতার জন্য।',
+                    'hi' => 'पे बटन पर क्लिक करके आप हमारी {terms} से सहमत होते हैं।',
+                    'ur' => 'پے بٹن پر کلک کر کے آپ ہماری {terms} سے اتفاق کرتے ہیں۔',
+                    'ar' => 'بالنقر على زر الدفع فإنك توافق على {terms}.',
+                ],
+
+                'terms_of_service' => [
+                    'en' => 'Terms of Service',
+                    'bn' => 'সেবার শর্তাবলী',
+                    'hi' => 'सेवा की शर्तें',
+                    'ur' => 'سروس کی شرائط',
+                    'ar' => 'شروط الخدمة',
+                ],
+
+                'select_payment_option' => [
+                    'en' => 'Select payment option',
+                    'bn' => 'পেমেন্ট অপশন বেছে নিন',
+                    'hi' => 'भुगतान विकल्प चुनें',
+                    'ur' => 'ادائیگی کا اختیار منتخب کریں',
+                    'ar' => 'اختر خيار الدفع',
+                ],
+
+                'contact_support' => [
+                    'en' => 'Contact support',
+                    'bn' => 'সাপোর্টে যোগাযোগ',
+                    'hi' => 'सहायता से संपर्क करें',
+                    'ur' => 'سپورٹ سے رابطہ',
+                    'ar' => 'اتصل بالدعم',
+                ],
+
+                'copy' => [
+                    'en' => 'Copy',
+                    'bn' => 'কপি',
+                    'hi' => 'कॉपी',
+                    'ur' => 'کاپی',
+                    'ar' => 'نسخ',
+                ],
+
+                'got_it' => [
+                    'en' => 'Got it!',
+                    'bn' => 'বুঝেছি!',
+                    'hi' => 'समझ गया!',
+                    'ur' => 'سمجھ گیا!',
+                    'ar' => 'حسنًا!',
+                ],
+
+                'bank_transfer' => [
+                    'en' => 'Bank Transfer',
+                    'bn' => 'ব্যাংক ট্রান্সফার',
+                    'hi' => 'बैंक ट्रांसफर',
+                    'ur' => 'بینک ٹرانسفر',
+                    'ar' => 'تحويل بنكي',
+                ],
+
                 'mobile_banking' => [
                     'en' => 'Mobile Banking',
                     'bn' => 'মোবাইল ব্যাংকিং',

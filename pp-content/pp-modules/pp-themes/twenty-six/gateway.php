@@ -177,93 +177,61 @@
         }
     ?>
 </head>
-<body class="pp-gateway-page" style="<?= $bgStyle ?>" loading="lazy">
-    <div class="pp-shell">
-        <div class="pp-checkout">
-            <aside class="pp-checkout__aside" aria-label="<?php echo htmlspecialchars($data['lang']['order_summary'], ENT_QUOTES); ?>">
-                <div>
-                    <div class="pp-summary__brand-row">
-                        <?php if ($pp_brand_logo !== ''): ?>
-                            <img src="<?php echo htmlspecialchars($pp_brand_logo, ENT_QUOTES); ?>" alt="" class="pp-summary__logo" width="40" height="40">
-                        <?php endif; ?>
-                        <div>
-                            <p class="pp-summary__brand"><?php echo htmlspecialchars($pp_brand_display, ENT_QUOTES); ?></p>
-                            <p class="pp-summary__secure">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z"/><path d="M12 3a12 12 0 0 0 8.5 3.5"/><path d="M17 11v1a5 5 0 0 1 -10 0v-1"/><path d="M12 19v4"/></svg>
-                                <?php echo $data['lang']['secured_checkout']; ?>
-                            </p>
-                        </div>
-                    </div>
+<body class="pp-gateway-page pp-pay-flow" style="<?= $bgStyle ?>" loading="lazy">
+    <div class="pp-pay-flow__wrap">
+        <header class="pp-pay-flow__top">
+            <button type="button" class="pp-pay-flow__icon-btn" onclick="location.href='<?php echo htmlspecialchars($pp_checkout_address, ENT_QUOTES); ?>'" aria-label="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/><path d="M5 12l6 6"/><path d="M5 12l6-6"/></svg>
+            </button>
+            <button type="button" class="pp-pay-flow__icon-btn" data-bs-target="#modal-language" data-bs-toggle="modal" aria-label="Language">বাং</button>
+            <button type="button" class="pp-pay-flow__icon-btn" onclick="location.href='<?php echo htmlspecialchars($pp_checkout_address, ENT_QUOTES); ?>?cancel'" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+            </button>
+        </header>
 
-                    <h2 class="pp-summary__heading"><?php echo $data['lang']['order_summary']; ?></h2>
-
-                    <ul class="pp-summary__meta">
-                        <?php if ($pp_trx_ref !== ''): ?>
-                            <li>
-                                <span class="pp-summary__meta-label"><?php echo $data['lang']['transaction_ref']; ?></span>
-                                <span class="pp-summary__meta-value"><?php echo htmlspecialchars($pp_trx_ref, ENT_QUOTES); ?></span>
-                            </li>
-                        <?php endif; ?>
-                        <li>
-                            <span class="pp-summary__meta-label"><?php echo $data['lang']['total']; ?></span>
-                            <span class="pp-summary__meta-value"><?php echo number_format($pp_subtotal, 2).' '.htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
-                        </li>
-                        <?php if ($pp_processing_fee > 0): ?>
-                            <li>
-                                <span class="pp-summary__meta-label"><?php echo $data['lang']['processing_fee']; ?></span>
-                                <span class="pp-summary__meta-value"><?php echo number_format($pp_processing_fee, 2).' '.htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
-                            </li>
-                        <?php endif; ?>
-                        <?php if ($pp_discount > 0): ?>
-                            <li>
-                                <span class="pp-summary__meta-label"><?php echo $data['lang']['discount']; ?></span>
-                                <span class="pp-summary__meta-value">−<?php echo number_format($pp_discount, 2).' '.htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                </div>
-
-                <div class="pp-summary__total">
-                    <span class="pp-summary__total-label"><?php echo $data['lang']['total_due']; ?></span>
-                    <span class="pp-summary__total-value">
-                        <?php echo number_format($pp_pay_amount, 2); ?>
-                        <span class="pp-summary__total-currency"><?php echo htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
-                    </span>
-                </div>
-            </aside>
-
-            <div class="pp-checkout__main">
-                <div class="pp-main__toolbar">
-                    <button type="button" class="pp-icon-btn" onclick="location.href='<?php echo htmlspecialchars($pp_checkout_address, ENT_QUOTES); ?>'" aria-label="Back">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z"/><path d="M5 12h14"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></svg>
-                    </button>
-                    <button type="button" class="pp-icon-btn" data-bs-target="#modal-language" data-bs-toggle="modal" aria-label="Language">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z"/><path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629"/><path d="M4 6.371h7"/><path d="M5 9c0 2.144 2.252 3.908 6 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/><path d="M6.694 3l.793 .582"/></svg>
-                    </button>
-                </div>
-
-                <div class="pp-main__amount-mobile" aria-live="polite">
-                    <p class="pp-main__amount-label"><?php echo $data['lang']['complete_payment']; ?></p>
-                    <p class="pp-main__amount-value">
-                        <?php echo number_format($pp_pay_amount, 2); ?>
-                        <span><?php echo htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
-                    </p>
-                </div>
-
-                <?php if (! $pp_show_method_switcher): ?>
-                    <div class="pp-main__gateway-badge">
-                        <img src="<?php echo htmlspecialchars($gateway_info['gateway']['logo'], ENT_QUOTES); ?>" alt="">
-                    </div>
-                <?php endif; ?>
-
-                <?php include __DIR__.'/gateway-switcher.php'; ?>
-
-                <section class="pp-pay-steps">
-                    <h3 class="pp-pay-steps__title"><?php echo $data['lang']['how_to_pay']; ?></h3>
-                    <?php pp_gateway_render($_GET['gateway'] ?? '', $data); ?>
-                </section>
-            </div>
+        <div class="pp-pay-flow__gateway-logo">
+            <img src="<?php echo htmlspecialchars($gateway_info['gateway']['logo'], ENT_QUOTES); ?>" alt="">
         </div>
+
+        <article class="pp-order-card">
+            <div class="pp-order-card__gradient"></div>
+            <div class="pp-order-card__body">
+                <div class="pp-order-card__merchant">
+                    <?php if ($pp_brand_logo !== ''): ?>
+                        <img src="<?php echo htmlspecialchars($pp_brand_logo, ENT_QUOTES); ?>" alt="" class="pp-order-card__avatar" width="40" height="40">
+                    <?php endif; ?>
+                    <div>
+                        <p class="pp-order-card__name"><?php echo htmlspecialchars($pp_brand_display, ENT_QUOTES); ?></p>
+                        <?php if ($pp_trx_ref !== ''): ?>
+                            <p class="pp-order-card__ref"><?php echo htmlspecialchars($pp_trx_ref, ENT_QUOTES); ?></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <p class="pp-order-card__amount">
+                    <?php echo number_format($pp_pay_amount, 2); ?>
+                    <span><?php echo htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
+                </p>
+            </div>
+        </article>
+
+        <?php if ($pp_show_method_switcher): ?>
+            <?php include __DIR__.'/gateway-switcher.php'; ?>
+        <?php endif; ?>
+
+        <div class="pp-pay-flow__content">
+            <?php pp_gateway_render($_GET['gateway'] ?? '', $data); ?>
+        </div>
+
+        <p class="pp-pay-flow__secure">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+            <?php
+                echo str_replace(
+                    '{brand}',
+                    htmlspecialchars($pp_brand_display, ENT_QUOTES),
+                    (string) ($data['lang']['secured_by_brand'] ?? 'Secured by {brand}')
+                );
+            ?>
+        </p>
 
         <?php if (trim((string) ($data['options']['watermark_text'] ?? '')) !== ''): ?>
             <p class="pp-footer-note footer-branding"><?php echo $data['options']['watermark_text']; ?></p>

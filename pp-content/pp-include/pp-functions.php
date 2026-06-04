@@ -2974,8 +2974,39 @@
                 $instructions = $gateway->instructions($data);
             }
 
-            if(isset($instructions)){
-                echo '<ol class="payment-instructions payment-steps">';
+            if (isset($instructions)) {
+                $pp_panel_automation = isset($gateway_info['gateway_type']) && $gateway_info['gateway_type'] === 'automation';
+                $pp_panel_manual_trx = isset($gateway_info['gateway_type'], $gateway_info['verify_by'])
+                    && $gateway_info['gateway_type'] === 'manual'
+                    && $gateway_info['verify_by'] === 'trxid';
+                $pp_panel_form = $pp_panel_automation || $pp_panel_manual_trx;
+                $pp_copy_label = htmlspecialchars($lang['copy'] ?? 'Copy', ENT_QUOTES);
+
+                if ($pp_panel_form) {
+                    echo '
+                        <form class="payment-form-submit pp-pay-form" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="action-v2" value="transaction-verify">
+                            <input type="hidden" name="gateway-id" value="'.$data['gateway']['gateway_id'].'">
+                            <input type="hidden" name="transaction-id" value="'.$data['transaction']['ref'].'">
+                            <div class="form-group pp-form-group mt-3" style="display: none">
+                                <label class="form-label">'.$data['lang']['mobile_number'].'</label>
+                                <div class="form-control-wrap">
+                                    <input type="text" class="form-control" name="mobile_number" placeholder="'.$data['lang']['mobile_number'].'">
+                                </div>
+                            </div>
+                    ';
+                }
+
+                echo '<div class="pp-brand-panel">';
+
+                if ($pp_panel_form) {
+                    echo '<h3 class="pp-brand-panel__title">'.htmlspecialchars($lang['enter_transaction_id'] ?? $lang['transaction_id'], ENT_QUOTES).'</h3>';
+                    echo '<div class="pp-brand-panel__field">';
+                    echo '<input type="text" class="pp-brand-panel__input pp-input" name="trxid" placeholder="'.htmlspecialchars($lang['enter_transaction_id'], ENT_QUOTES).'" required autocomplete="off" inputmode="text">';
+                    echo '</div>';
+                }
+
+                echo '<ol class="payment-instructions payment-steps pp-brand-steps">';
 
                 $rowli = 0;
 
@@ -3015,15 +3046,8 @@
 
                     /* Copy button */
                     if (!empty($step['copy']) && isset($step['value'])) {
-                        echo ' <span class="button-icon"
-                            onclick="copy_value(\'' . htmlspecialchars($step['value'], ENT_QUOTES) . '\')">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666"/>
-                                <path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/>
-                            </svg>
-                        </span>';
+                        echo ' <button type="button" class="pp-copy-chip"
+                            onclick="copy_value(\'' . htmlspecialchars($step['value'], ENT_QUOTES) . '\')">'.$pp_copy_label.'</button>';
                     }
 
                     echo '</p>';
@@ -3046,6 +3070,52 @@
                 }
 
                 echo '</ol>';
+                echo '</div>';
+
+                if ($pp_panel_form) {
+                    $pp_submit_label = $pp_panel_automation ? $lang['verify'] : ($lang['submit'] ?? $lang['verify']);
+                    echo '<button class="pp-sticky-verify payment-form-btn pp-submit-btn" type="submit">'.htmlspecialchars($pp_submit_label, ENT_QUOTES).'</button>';
+                    echo '</form>';
+
+                    echo '
+                        <script data-cfasync="false">
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const form = document.querySelector(".pp-pay-form");
+                                if (!form) return;
+
+                                const mobileWrapper = form.querySelector(`.form-group[style*="display: none"]`);
+                                const submitBtn = form.querySelector(".payment-form-btn");
+
+                                form.addEventListener("submit", function(e) {
+                                    e.preventDefault();
+                                    const formData = new FormData(form);
+                                    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
+
+                                    fetch("", { method: "POST", body: formData })
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        submitBtn.innerHTML = `'.addslashes($pp_submit_label).'`;
+                                        if (data.status === "true") {
+                                            success(data);
+                                        } else if (data.status === "false") {
+                                            if (data.visible_number && data.visible_number === "true" && mobileWrapper) {
+                                                mobileWrapper.style.display = "block";
+                                            }
+                                            failed(data.title, data.message);
+                                        } else {
+                                            failed("Unexpected Response", "Please try again later.");
+                                        }
+                                    })
+                                    .catch(err => {
+                                        submitBtn.innerHTML = `'.addslashes($pp_submit_label).'`;
+                                        console.error(err);
+                                        failed("Request Error", "Something went wrong. Please try again.");
+                                    });
+                                });
+                            });
+                        </script>
+                    ';
+                }
 
                 echo '
                     <div id="pp-image-modal" class="pp-modal" style="display:none;" role="dialog" aria-modal="true" aria-label="QR code">
@@ -3086,82 +3156,12 @@
 
             if(isset($gateway_info)){
                 if(isset($gateway_info['gateway_type']) && $gateway_info['gateway_type'] == "automation"){
-                    echo '
-                        <div class="pp-verify-section">
-                        <form class="payment-form-submit pp-verify-form" method="POST" enctype="multipart/form-data">
-                            <input type="hidden" name="action-v2" value="transaction-verify">
-                            <input type="hidden" name="gateway-id" value="'.$data['gateway']['gateway_id'].'">
-                            <input type="hidden" name="transaction-id" value="'.$data['transaction']['ref'].'">
-
-                            <div class="form-group pp-form-group mt-3" style="display: none">
-                                <label class="form-label">'.$data['lang']['mobile_number'].'</label>
-                                <div class="form-control-wrap">
-                                    <input type="text" class="form-control" name="mobile_number" placeholder="'.$data['lang']['mobile_number'].'"> 
-                                </div>
-                            </div>
-
-                            <div class="form-group pp-form-group mt-3">
-                                <label class="form-label">'.$data['lang']['transaction_id'].'</label>
-                                <div class="form-control-wrap">
-                                    <input type="text" class="form-control pp-input" name="trxid" placeholder="'.$data['lang']['enter_transaction_id'].'" required="" autocomplete="off" inputmode="text"> 
-                                </div>
-                            </div>
-
-                            <button class="btn btn-primary w-100 payment-form-btn pp-submit-btn mt-3" type="submit">'.$data['lang']['verify'].'</button>
-                        </form>
-                        </div>
-
-                        <script data-cfasync="false">
-                            document.addEventListener("DOMContentLoaded", function() {
-                                const form = document.querySelector(".payment-form-submit");
-                                const mobileWrapper = form.querySelector(`.form-group[style*="display: none"]`);
-                                const submitBtn = form.querySelector(".payment-form-btn");
-
-                                form.addEventListener("submit", function(e) {
-                                    e.preventDefault();
-
-                                    const formData = new FormData(form);
-
-                                    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
-
-                                    fetch("", { // replace "" with your PHP AJAX URL if needed
-                                        method: "POST",
-                                        body: formData
-                                    })
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        submitBtn.innerHTML = `'.$data['lang']['verify'].'`;
-
-                                        if(data.status === "true") {
-                                            // Verified successfully
-                                            success(data); // pass data if needed
-                                        } else if(data.status === "false") {
-                                            // Failed verification
-                                            if(data.visible_number && data.visible_number === "true") {
-                                                mobileWrapper.style.display = "block";
-                                            }
-                                            // Call failed handler with title & message
-                                            failed(data.title, data.message);
-                                        } else {
-                                            // Unexpected response
-                                            failed("Unexpected Response", "Please try again later.");
-                                        }
-                                    })
-                                    .catch(err => {
-                                        submitBtn.innerHTML = `'.$data['lang']['verify'].'`;
-                                        console.error(err);
-                                        failed("Request Error", "Something went wrong. Please try again.");
-                                    });
-                                });
-                            });
-
-                        </script>
-
-                    ';
+                    // Verify UI rendered inside brand panel when instructions exist.
                 }
                 if(isset($gateway_info['gateway_type']) && $gateway_info['gateway_type'] == "manual"){
                     if(isset($gateway_info['verify_by']) && $gateway_info['verify_by'] == "trxid"){
-                        echo '
+                        if (!isset($instructions)) {
+                            echo '
                             <div class="pp-verify-section">
                             <form class="payment-form-submit pp-verify-form" method="POST" enctype="multipart/form-data">
                                 <input type="hidden" name="action-v2" value="transaction-verify">
@@ -3221,7 +3221,8 @@
 
                             </script>
                         ';
-                    }else{
+                        }
+                    } else {
                         if(isset($gateway_info['verify_by']) && $gateway_info['verify_by'] == "slip"){
                             echo '
                                 <div class="pp-verify-section">

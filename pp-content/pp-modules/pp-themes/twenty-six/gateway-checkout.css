@@ -677,3 +677,305 @@ body.pp-gateway-page {
         opacity: 1;
     }
 }
+
+/* Gateway payment flow (bKash / Nagad / Rocket style) */
+body.pp-pay-flow {
+    padding-bottom: 5.5rem;
+}
+
+.pp-pay-flow__wrap {
+    width: 100%;
+    max-width: 28rem;
+    margin: 0 auto;
+    padding: 0 0 1rem;
+}
+
+.pp-pay-flow__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.85rem;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 15;
+}
+
+.pp-pay-flow__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.35rem;
+    height: 2.35rem;
+    padding: 0 0.5rem;
+    border: none;
+    border-radius: 9999px;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.pp-pay-flow__icon-btn svg {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.pp-pay-flow__gateway-logo {
+    text-align: center;
+    padding: 1rem 1rem 0.5rem;
+    background: #fff;
+}
+
+.pp-pay-flow__gateway-logo img {
+    max-height: 2.75rem;
+    max-width: 10rem;
+    object-fit: contain;
+}
+
+.pp-order-card {
+    margin: 0.75rem 1rem 0;
+    background: #fff;
+    border-radius: 0.875rem;
+    box-shadow: 0 8px 24px -16px rgba(15, 23, 42, 0.2);
+    overflow: hidden;
+    border: 1px solid #e8ecef;
+}
+
+.pp-order-card__gradient {
+    height: 0.2rem;
+    background: linear-gradient(90deg, #3b82f6 0%, var(--pp-brand) 55%, #f472b6 100%);
+}
+
+.pp-order-card__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+}
+
+.pp-order-card__merchant {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.pp-order-card__avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.pp-order-card__name {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.pp-order-card__ref {
+    margin: 0.15rem 0 0;
+    font-size: 0.6875rem;
+    color: #94a3b8;
+    word-break: break-all;
+}
+
+.pp-order-card__amount {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+}
+
+.pp-order-card__amount span {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.pp-pay-flow__content {
+    padding: 0.75rem 1rem 0;
+    min-width: 0;
+}
+
+.pp-pay-flow .pp-pay-methods {
+    margin: 0 0 0.75rem;
+}
+
+.pp-brand-panel {
+    background: var(--pp-brand);
+    color: var(--pp-on-brand);
+    border-radius: 0.875rem;
+    padding: 1rem 1rem 0.35rem;
+    box-shadow: 0 12px 28px -16px rgba(15, 23, 42, 0.35);
+}
+
+.pp-brand-panel__title {
+    margin: 0 0 0.65rem;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.pp-brand-panel__field {
+    margin-bottom: 0.85rem;
+}
+
+.pp-brand-panel__input {
+    width: 100%;
+    min-height: 3rem;
+    border: none;
+    border-radius: 0.65rem;
+    padding: 0 1rem;
+    font-size: 1rem;
+    color: #111827;
+}
+
+.pp-brand-panel__input::placeholder {
+    color: #9ca3af;
+}
+
+.pp-brand-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+.pp-brand-steps li {
+    display: block;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 0;
+}
+
+.pp-brand-steps li::before {
+    display: none;
+}
+
+.pp-brand-steps li .dot {
+    display: none;
+}
+
+.pp-brand-steps li:last-child {
+    border-bottom: none;
+}
+
+.pp-brand-steps li p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--pp-on-brand);
+}
+
+.pp-brand-steps .dynamic-value {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: #fde047;
+    font-weight: 800;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.pp-copy-chip {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.4rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 0.35rem;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--pp-on-brand);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.pp-brand-steps .pp-qr-inline {
+    margin-top: 0.5rem;
+}
+
+.pp-brand-steps .pp-qr-inline__frame {
+    background: #fff;
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.pp-brand-steps .pp-qr-inline__hint {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.pp-sticky-verify {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    max-width: calc(28rem - 2rem);
+    margin: 0 auto;
+    display: block;
+    width: 100%;
+    min-height: 3.1rem;
+    border: none;
+    border-radius: 0.75rem;
+    background: var(--pp-brand);
+    color: var(--pp-on-brand);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 12px 28px -12px rgba(15, 23, 42, 0.45);
+}
+
+.pp-pay-flow__secure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    margin: 1rem 1rem 0;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.pp-pay-flow__secure svg {
+    width: 1rem;
+    height: 1rem;
+    color: #16a34a;
+}
+
+@media (min-width: 768px) {
+    body.pp-pay-flow {
+        display: flex;
+        justify-content: center;
+        padding: 1rem 1rem 6rem;
+    }
+
+    .pp-pay-flow__wrap {
+        background: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 24px 48px -24px rgba(15, 23, 42, 0.2);
+        overflow: hidden;
+    }
+
+    .pp-sticky-verify {
+        position: sticky;
+        left: auto;
+        right: auto;
+        bottom: 0;
+        max-width: none;
+        margin: 0.75rem 1rem 1rem;
+        border-radius: 0.75rem;
+    }
+}
