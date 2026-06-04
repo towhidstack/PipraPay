@@ -27,6 +27,11 @@
         http_response_code(403);
         exit('Direct access not allowed');
     }
+
+    $current_gateway_id = (string) $_GET['gateway'];
+    $pp_gateways_mfs = pp_gateways('mfs', $data);
+    $pp_gateways_bank = pp_gateways('bank', $data);
+    $pp_gateways_global = pp_gateways('global', $data);
 ?>
 
 <!DOCTYPE html>
@@ -364,6 +369,226 @@
                 font-size: 20px;
             }
         }
+
+        /* Payment method switcher (bKash ↔ Nagad ↔ …) */
+        .pp-gateway-switcher {
+            margin-bottom: 1.25rem;
+        }
+
+        .pp-gateway-switcher__toggle {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.75rem 0.9rem;
+            border: 1px solid var(--pp-border);
+            border-radius: 0.875rem;
+            background: #fff;
+            color: var(--pp-text);
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .pp-gateway-switcher__toggle:hover,
+        .pp-gateway-switcher__toggle.is-open {
+            border-color: var(--pp-primary-ring);
+            background: var(--pp-primary-soft);
+        }
+
+        .pp-gateway-switcher__toggle-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            min-width: 0;
+        }
+
+        .pp-gateway-switcher__toggle-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--pp-text);
+        }
+
+        .pp-gateway-switcher__toggle-hint {
+            font-size: 0.75rem;
+            color: var(--pp-muted);
+            line-height: 1.35;
+        }
+
+        .pp-gateway-switcher__toggle-icon {
+            flex-shrink: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+            color: var(--pp-primary);
+            transition: transform 0.2s ease;
+        }
+
+        .pp-gateway-switcher__toggle-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .pp-gateway-switcher__toggle.is-open .pp-gateway-switcher__toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .pp-gateway-switcher__quick {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.65rem;
+            padding-bottom: 0.15rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x proximity;
+        }
+
+        .pp-gateway-switcher__quick::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .pp-gateway-switcher__quick-item {
+            flex: 0 0 auto;
+            scroll-snap-align: start;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 4.25rem;
+            height: 3rem;
+            border: 2px solid var(--pp-border);
+            border-radius: 0.75rem;
+            background: #fff;
+            padding: 0.35rem;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .pp-gateway-switcher__quick-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .pp-gateway-switcher__quick-item.is-active {
+            border-color: var(--pp-primary);
+            box-shadow: 0 0 0 1px var(--pp-primary);
+            pointer-events: none;
+        }
+
+        .pp-gateway-switcher__panel {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            border: 1px solid var(--pp-border);
+            border-radius: 1rem;
+            background: #f9fafb;
+        }
+
+        .pp-gateway-switcher__tabs {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 0.35rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .pp-gateway-switcher__tab {
+            flex: 0 0 auto;
+            border: 1px solid var(--pp-border);
+            border-radius: 9999px;
+            background: #fff;
+            color: var(--pp-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.4rem 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+
+        .pp-gateway-switcher__tab.is-active {
+            border-color: var(--pp-primary);
+            background: var(--pp-primary);
+            color: var(--pp-on-primary, #fff);
+        }
+
+        .pp-gateway-switcher__grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+        }
+
+        @media (min-width: 480px) {
+            .pp-gateway-switcher__grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        .pp-gateway-switcher__item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.5rem 0.35rem;
+            border: 2px solid var(--pp-border);
+            border-radius: 0.75rem;
+            background: #fff;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+        }
+
+        .pp-gateway-switcher__item:hover {
+            border-color: var(--pp-primary-ring);
+            transform: translateY(-1px);
+        }
+
+        .pp-gateway-switcher__item.is-active {
+            border-color: var(--pp-primary);
+            box-shadow: 0 0 0 1px var(--pp-primary);
+            pointer-events: none;
+        }
+
+        .pp-gateway-switcher__item-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 2.25rem;
+            width: 100%;
+        }
+
+        .pp-gateway-switcher__item-logo img {
+            max-height: 2rem;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .pp-gateway-switcher__item-name {
+            font-size: 0.625rem;
+            font-weight: 600;
+            line-height: 1.2;
+            text-align: center;
+            color: #4b5563;
+            word-break: break-word;
+        }
+
+        @media (min-width: 640px) {
+            .pp-gateway-switcher__quick {
+                display: none;
+            }
+
+            .pp-gateway-switcher__toggle {
+                display: none;
+            }
+
+            .pp-gateway-switcher__panel {
+                display: block !important;
+                margin-top: 0;
+            }
+
+            .pp-gateway-switcher__panel[hidden] {
+                display: block !important;
+            }
+        }
     </style>
 
     <?php
@@ -426,6 +651,8 @@
                       </div>
                   <?php endif; ?>
               </div>
+
+              <?php include __DIR__.'/gateway-switcher.php'; ?>
 
               <?php
                  pp_gateway_render($_GET['gateway'] ?? '', $data);
