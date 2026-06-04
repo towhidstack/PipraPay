@@ -3239,11 +3239,17 @@
                 }
 
                 echo '</ol>';
-                echo '</div>';
 
                 if ($pp_panel_form) {
                     $pp_submit_label = $pp_panel_automation ? $lang['verify'] : ($lang['submit'] ?? $lang['verify']);
+                    echo '<div class="pp-brand-panel__actions">';
                     echo '<button class="pp-sticky-verify payment-form-btn pp-submit-btn" type="submit">'.htmlspecialchars($pp_submit_label, ENT_QUOTES).'</button>';
+                    echo '</div>';
+                }
+
+                echo '</div>';
+
+                if ($pp_panel_form) {
                     echo '</form>';
 
                     echo '

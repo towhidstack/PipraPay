@@ -695,7 +695,7 @@ body.pp-pay-flow {
     width: 100%;
     max-width: 28rem;
     margin: 0 auto;
-    padding: 0 0 5.75rem;
+    padding: 0 0 1.25rem;
     min-height: 100vh;
 }
 
@@ -834,7 +834,7 @@ body.pp-pay-flow {
     background: var(--pp-brand);
     color: var(--pp-on-brand);
     border-radius: 0.875rem;
-    padding: 1rem 1rem 0.35rem;
+    padding: 1rem 1rem 1rem;
     box-shadow: 0 12px 28px -16px rgba(15, 23, 42, 0.35);
 }
 
@@ -937,28 +937,46 @@ body.pp-pay-flow {
     color: rgba(255, 255, 255, 0.85);
 }
 
-.pp-sticky-verify {
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 2rem);
-    max-width: 26rem;
-    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
-    z-index: 40;
-    margin: 0;
+.pp-brand-panel__actions {
+    margin: 0.85rem 0 0;
+    padding: 0;
+}
+
+.pp-pay-form .pp-sticky-verify,
+button.pp-sticky-verify.payment-form-btn {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    transform: none;
+    z-index: 1;
     display: block;
+    box-sizing: border-box;
     width: 100%;
-    min-height: 3.1rem;
+    max-width: 100%;
+    margin: 0;
+    min-height: 3.25rem;
+    padding: 0 1rem;
     border: none;
     border-radius: 0.75rem;
-    background: var(--pp-brand);
-    color: var(--pp-on-brand);
+    background: var(--pp-on-brand);
+    color: var(--pp-brand);
     font-size: 1rem;
     font-weight: 800;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     cursor: pointer;
-    box-shadow: 0 12px 28px -12px rgba(15, 23, 42, 0.45);
+    box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.35);
+}
+
+.pp-pay-form .pp-sticky-verify:hover,
+button.pp-sticky-verify.payment-form-btn:hover {
+    filter: brightness(0.97);
+}
+
+.pp-pay-form .pp-sticky-verify:active,
+button.pp-sticky-verify.payment-form-btn:active {
+    transform: scale(0.99);
 }
 
 .pp-pay-flow__secure {
@@ -992,15 +1010,9 @@ body.pp-pay-flow {
         padding-bottom: 1rem;
     }
 
-    .pp-sticky-verify {
-        position: sticky;
-        left: auto;
-        right: auto;
-        transform: none;
-        width: auto;
-        bottom: 0;
-        max-width: none;
-        margin: 0.75rem 1rem 1rem;
-        border-radius: 0.75rem;
+    .pp-pay-form .pp-sticky-verify,
+    button.pp-sticky-verify.payment-form-btn {
+        width: 100%;
+        max-width: 100%;
     }
 }
