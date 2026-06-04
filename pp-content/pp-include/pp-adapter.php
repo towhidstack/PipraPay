@@ -9020,17 +9020,18 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                                         }
                                                     }else{
                                                        if(isset($options['pending_payment']) && $options['pending_payment'] == "enable"){
-                                                          $mobile_number = escape_string($_POST['mobile_number'] ?? '');
+                                                          $customer_info = json_decode($response_transaction['response'][0]['customer_info'], true) ?: [];
+                                                          $mobile_number = escape_string(trim($customer_info['mobile'] ?? ''));
 
-                                                          if($mobile_number == ""){
-                                                              echo json_encode(['status' => "false", 'title' => 'Transaction Not Matched', 'message' => 'The Transaction ID you entered could not be verified. Please try again after some time, or enter your phone number and submit for manual approval.', 'visible_number' => "true"]);
+                                                          if($mobile_number === '' || $mobile_number === '--'){
+                                                              echo json_encode(['status' => "false", 'title' => 'Transaction Not Matched', 'message' => 'The Transaction ID you entered could not be verified. Please check the ID and try again after some time.']);
                                                           }else{
                                                                 $columns = ['processing_fee', 'discount_amount', 'local_net_amount', 'local_currency', 'gateway_id', 'sender_key',  'status', 'sender', 'trx_id', 'updated_date'];
                                                                 $values = [money_sanitize($totalProcessingFee), money_sanitize($totalDiscount), money_sanitize($convertedAmount), $response_gateway['response'][0]['currency'], $gateway_id, $gateway_info['sender_key'], 'pending', $mobile_number, $trxid, getCurrentDatetime('Y-m-d H:i:s')];
                                                                 $condition = 'id ="'.$response_transaction['response'][0]['id'].'"'; 
 
                                                                 updateData($db_prefix.'transaction', $columns, $values, $condition);
-                                                                echo json_encode([ 'status' => "true", 'title' => 'Transaction Submitted', 'message' => 'Your Transaction ID has been successfully submitted' ]);
+                                                                echo json_encode([ 'status' => "true", 'title' => 'Transaction Submitted', 'message' => 'Your Transaction ID has been successfully submitted for review.' ]);
                                                           }
                                                        }else{
                                                            echo json_encode(['status' => "false", 'title' => 'Transaction Not Found', 'message' => 'The Transaction ID you entered could not be verified. Please check the ID and try again after some time.']);

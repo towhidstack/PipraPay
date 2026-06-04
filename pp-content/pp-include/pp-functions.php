@@ -3157,12 +3157,6 @@
                             <input type="hidden" name="action-v2" value="transaction-verify">
                             <input type="hidden" name="gateway-id" value="'.$data['gateway']['gateway_id'].'">
                             <input type="hidden" name="transaction-id" value="'.$data['transaction']['ref'].'">
-                            <div class="form-group pp-form-group mt-3" style="display: none">
-                                <label class="form-label">'.$data['lang']['mobile_number'].'</label>
-                                <div class="form-control-wrap">
-                                    <input type="text" class="form-control" name="mobile_number" placeholder="'.$data['lang']['mobile_number'].'">
-                                </div>
-                            </div>
                     ';
                 }
 
@@ -3285,7 +3279,6 @@
                                 const form = document.querySelector(".pp-pay-form");
                                 if (!form) return;
 
-                                const mobileWrapper = form.querySelector(`.form-group[style*="display: none"]`);
                                 const submitBtn = form.querySelector(".payment-form-btn");
 
                                 form.addEventListener("submit", function(e) {
@@ -3300,9 +3293,6 @@
                                         if (data.status === "true") {
                                             success(data);
                                         } else if (data.status === "false") {
-                                            if (data.visible_number && data.visible_number === "true" && mobileWrapper) {
-                                                mobileWrapper.style.display = "block";
-                                            }
                                             failed(data.title, data.message);
                                         } else {
                                             failed("Unexpected Response", "Please try again later.");
