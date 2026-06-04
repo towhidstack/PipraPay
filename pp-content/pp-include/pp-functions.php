@@ -3166,7 +3166,20 @@
                     ';
                 }
 
-                echo '<div class="pp-brand-panel">';
+                $pp_panel_qr_src = '';
+                $pp_panel_qr_hint = htmlspecialchars($lang['tap_to_enlarge_qr'] ?? 'Tap QR to enlarge', ENT_QUOTES);
+
+                foreach ($instructions as $pp_scan_step) {
+                    if (! empty($pp_scan_step['action']['type']) && $pp_scan_step['action']['type'] === 'image' && ! empty($pp_scan_step['action']['value'])) {
+                        $pp_panel_qr_src = pp_resolve_media_url((string) $pp_scan_step['action']['value']);
+
+                        break;
+                    }
+                }
+
+                $pp_panel_has_qr = $pp_panel_qr_src !== '';
+
+                echo '<div class="pp-brand-panel'.($pp_panel_has_qr ? ' pp-brand-panel--has-qr' : '').'">';
 
                 if ($pp_panel_form) {
                     echo '<h3 class="pp-brand-panel__title">'.htmlspecialchars($lang['enter_transaction_id'] ?? $lang['transaction_id'], ENT_QUOTES).'</h3>';
@@ -3174,6 +3187,8 @@
                     echo '<input type="text" class="pp-brand-panel__input pp-input" name="trxid" placeholder="'.htmlspecialchars($lang['enter_transaction_id'], ENT_QUOTES).'" required autocomplete="off" inputmode="text">';
                     echo '</div>';
                 }
+
+                echo '<div class="pp-brand-panel__grid">';
 
                 echo '<ol class="payment-instructions payment-steps pp-brand-steps">';
 
@@ -3221,9 +3236,8 @@
 
                     echo '</p>';
 
-                    if ($pp_has_qr) {
+                    if ($pp_has_qr && ! $pp_panel_has_qr) {
                         $pp_qr_esc = htmlspecialchars($pp_qr_src, ENT_QUOTES);
-                        $pp_qr_hint = htmlspecialchars($lang['tap_to_enlarge_qr'] ?? 'Tap QR to enlarge', ENT_QUOTES);
 
                         echo '<div class="pp-qr-inline">';
                         echo '<button type="button" class="pp-qr-inline__frame" onclick="pp_show_image(\''.$pp_qr_esc.'\')" aria-label="'.$pp_qr_hint.'">';
@@ -3239,6 +3253,19 @@
                 }
 
                 echo '</ol>';
+
+                if ($pp_panel_has_qr) {
+                    $pp_qr_esc = htmlspecialchars($pp_panel_qr_src, ENT_QUOTES);
+
+                    echo '<aside class="pp-brand-panel__qr" aria-label="'.$pp_panel_qr_hint.'">';
+                    echo '<button type="button" class="pp-brand-panel__qr-frame" onclick="pp_show_image(\''.$pp_qr_esc.'\')" aria-label="'.$pp_panel_qr_hint.'">';
+                    echo '<img src="'.$pp_qr_esc.'" alt="" width="180" height="180" loading="lazy" decoding="async">';
+                    echo '</button>';
+                    echo '<span class="pp-brand-panel__qr-hint">'.$pp_panel_qr_hint.'</span>';
+                    echo '</aside>';
+                }
+
+                echo '</div>';
 
                 if ($pp_panel_form) {
                     $pp_submit_label = $pp_panel_automation ? $lang['verify'] : ($lang['submit'] ?? $lang['verify']);

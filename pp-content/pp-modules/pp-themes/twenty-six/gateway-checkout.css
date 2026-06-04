@@ -863,6 +863,65 @@ body.pp-pay-flow {
     color: #9ca3af;
 }
 
+.pp-brand-panel__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    align-items: start;
+}
+
+.pp-brand-panel--has-qr .pp-brand-panel__grid {
+    grid-template-columns: minmax(0, 1fr) min(7.5rem, 32%);
+    gap: 0.65rem 0.85rem;
+}
+
+.pp-brand-panel--has-qr li.pp-step--has-qr {
+    padding-bottom: 0.35rem;
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.pp-brand-panel__qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    position: sticky;
+    top: 0.5rem;
+    align-self: start;
+}
+
+.pp-brand-panel__qr-frame {
+    display: block;
+    width: 100%;
+    padding: 0.45rem;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 0.65rem;
+    background: #fff;
+    cursor: zoom-in;
+    line-height: 0;
+    box-shadow: 0 8px 20px -14px rgba(15, 23, 42, 0.35);
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.pp-brand-panel__qr-frame:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px -12px rgba(15, 23, 42, 0.4);
+}
+
+.pp-brand-panel__qr-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.35rem;
+}
+
+.pp-brand-panel__qr-hint {
+    font-size: 0.625rem;
+    line-height: 1.35;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.82);
+}
+
 .pp-brand-steps {
     list-style: none;
     margin: 0;
@@ -995,11 +1054,18 @@ button.pp-sticky-verify.payment-form-btn:active {
     color: #16a34a;
 }
 
+@media (min-width: 480px) {
+    .pp-brand-panel--has-qr .pp-brand-panel__grid {
+        grid-template-columns: minmax(0, 1fr) 9.5rem;
+        gap: 0.75rem 1rem;
+    }
+}
+
 @media (min-width: 768px) {
     body.pp-pay-flow {
         display: flex;
         justify-content: center;
-        padding: 1rem 1rem 6rem;
+        padding: 1rem 1rem 2rem;
     }
 
     .pp-pay-flow__wrap {
@@ -1008,6 +1074,23 @@ button.pp-sticky-verify.payment-form-btn:active {
         box-shadow: 0 24px 48px -24px rgba(15, 23, 42, 0.2);
         overflow: visible;
         padding-bottom: 1rem;
+    }
+
+    .pp-pay-flow__wrap:has(.pp-brand-panel--has-qr) {
+        max-width: 44rem;
+    }
+
+    .pp-brand-panel--has-qr .pp-brand-panel__grid {
+        grid-template-columns: minmax(0, 1fr) 13.5rem;
+        gap: 0.85rem 1.25rem;
+    }
+
+    .pp-brand-panel__qr-frame {
+        padding: 0.65rem;
+    }
+
+    .pp-brand-panel__qr-hint {
+        font-size: 0.6875rem;
     }
 
     .pp-pay-form .pp-sticky-verify,
