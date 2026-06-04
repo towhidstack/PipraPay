@@ -18,9 +18,11 @@ fi
 
 # Nixpacks PHP (Coolify default): prestart.mjs + php-fpm + nginx
 if [ -f /assets/scripts/prestart.mjs ] && [ -f /app/nginx.template.conf ]; then
+    mkdir -p /var/log/nginx /var/cache/nginx
     node /assets/scripts/prestart.mjs /app/nginx.template.conf /nginx.conf
     php-fpm -y /assets/php-fpm.conf -D
-    exec nginx -c /nginx.conf -g 'daemon off;'
+    # nginx.template.conf already has "daemon off;" — do not pass -g daemon off (duplicate)
+    exec nginx -c /nginx.conf
 fi
 
 # Dockerfile image: supervisord
@@ -30,6 +32,7 @@ fi
 
 PHP_FPM="$(command -v php-fpm 2>/dev/null || true)"
 if [ -n "$PHP_FPM" ]; then
+    mkdir -p /var/log/nginx /var/cache/nginx
     "$PHP_FPM" -D
     exec nginx -g 'daemon off;'
 fi
