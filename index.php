@@ -414,6 +414,54 @@
                             $segments[2] = 'redirect';
                         }
 
+                        if ($api_type === 'gateways' && ($segments[2] ?? null) === 'list') {
+                            $api_scopes = $response_api['response'][0]['api_scopes'] ?? [];
+                            if (is_string($api_scopes)) {
+                                $api_scopes = json_decode($api_scopes, true);
+                            }
+
+                            if (! in_array('create_payment', $api_scopes ?? [])) {
+                                http_response_code(400);
+                                echo json_encode([
+                                    'error' => [
+                                        'code' => 'INSUFFICIENT_SCOPE',
+                                        'message' => 'The API key does not have the required permission: Create Payment',
+                                    ],
+                                ]);
+                                exit;
+                            }
+
+                            $brandId = $response_api['response'][0]['brand_id'];
+                            $params = [':brand_id' => $brandId];
+                            $response_gateways = json_decode(
+                                getData($db_prefix.'gateways', 'WHERE brand_id = :brand_id AND status = "active"', '* FROM', $params),
+                                true
+                            );
+
+                            $gateways = [];
+                            foreach ($response_gateways['response'] ?? [] as $row) {
+                                $logo = trim((string) ($row['logo'] ?? ''));
+                                if ($logo !== '' && ! preg_match('#^https?://#i', $logo)) {
+                                    $logo = rtrim($site_url, '/').'/'.ltrim($logo, '/');
+                                }
+
+                                $gateways[] = [
+                                    'gateway_id' => $row['gateway_id'],
+                                    'display' => $row['display'],
+                                    'name' => $row['name'],
+                                    'slug' => $row['slug'],
+                                    'tab' => $row['tab'],
+                                    'logo' => $logo !== '' ? $logo : null,
+                                ];
+                            }
+
+                            echo json_encode([
+                                'status' => true,
+                                'gateways' => $gateways,
+                            ]);
+                            exit;
+                        }
+
                         if($api_type == "checkout"){
                             $api_scopes = $response_api['response'][0]['api_scopes'] ?? [];
                             if (is_string($api_scopes)) {
