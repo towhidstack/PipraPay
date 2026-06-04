@@ -32,6 +32,29 @@
     $pp_gateways_mfs = pp_gateways('mfs', $data);
     $pp_gateways_bank = pp_gateways('bank', $data);
     $pp_gateways_global = pp_gateways('global', $data);
+
+    $pp_switchable_count = 0;
+
+    foreach ([$pp_gateways_mfs, $pp_gateways_bank, $pp_gateways_global] as $pp_tab_list) {
+        if (($pp_tab_list['status'] ?? false) === true && !empty($pp_tab_list['gateway'])) {
+            $pp_switchable_count += count($pp_tab_list['gateway']);
+        }
+    }
+
+    $pp_show_method_switcher = $pp_switchable_count > 1;
+
+    $pp_pay_amount = (float) ($data['transaction']['local_net_amount'] ?? $data['transaction']['amount'] ?? 0);
+    $pp_pay_currency = trim((string) ($data['transaction']['local_currency'] ?? $data['transaction']['currency'] ?? 'BDT'));
+
+    if ($pp_pay_currency === '' || $pp_pay_currency === '--') {
+        $pp_pay_currency = 'BDT';
+    }
+
+    $pp_theme_accent = trim((string) ($data['options']['primary_color'] ?? '#2563eb'));
+
+    if ($pp_theme_accent === '' || $pp_theme_accent === '--') {
+        $pp_theme_accent = '#2563eb';
+    }
 ?>
 
 <!DOCTYPE html>
@@ -51,14 +74,21 @@
 
     <style>
         :root {
-            --pp-primary: <?php echo $gateway_info['gateway']['primary_color'];?>;
-            --pp-primary-soft: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.10)?>;
-            --pp-primary-ring: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.22)?>;
-            --pp-on-primary: <?php echo $gateway_info['gateway']['text_color'];?>;
+            --pp-brand: <?php echo $gateway_info['gateway']['primary_color'];?>;
+            --pp-brand-soft: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.10)?>;
+            --pp-brand-ring: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.22)?>;
+            --pp-on-brand: <?php echo $gateway_info['gateway']['text_color'];?>;
+            --pp-accent: <?php echo $pp_theme_accent;?>;
+            --pp-accent-soft: <?php echo pp_hexToRgba($pp_theme_accent, 0.10)?>;
+            --pp-primary: var(--pp-brand);
+            --pp-primary-soft: var(--pp-brand-soft);
+            --pp-primary-ring: var(--pp-brand-ring);
+            --pp-on-primary: var(--pp-on-brand);
             --pp-surface: #ffffff;
             --pp-muted: #6b7280;
             --pp-text: #111827;
-            --pp-border: #e5e7eb;
+            --pp-border: #e8ecef;
+            --pp-bg: #f1f5f9;
         }
 
         body.pp-gateway-page {
@@ -120,30 +150,47 @@
             height: 1.25rem;
         }
 
-        .pp-gateway-hero {
+        .pp-pay-header {
             text-align: center;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--pp-border);
+        }
+
+        .pp-pay-header--solo {
+            border-bottom: none;
+            padding-bottom: 0;
         }
 
         .pp-gateway-logo {
-            height: 3.25rem;
+            height: 2.75rem;
             width: auto;
-            max-width: 180px;
+            max-width: 160px;
             object-fit: contain;
-            margin-bottom: 0.75rem;
+            margin: 0 auto 0.75rem;
         }
 
-        .pp-gateway-amount {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.4rem 0.85rem;
-            border-radius: 9999px;
-            background: var(--pp-primary-soft);
-            color: var(--pp-primary);
-            font-size: 0.875rem;
+        .pp-pay-header__label {
+            margin: 0 0 0.35rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--pp-muted);
+            letter-spacing: 0.02em;
+        }
+
+        .pp-pay-header__amount {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--pp-text);
+            letter-spacing: -0.02em;
+        }
+
+        .pp-pay-header__currency {
+            font-size: 1rem;
             font-weight: 700;
-            letter-spacing: 0.01em;
+            color: var(--pp-muted);
         }
 
         .btn-primary,
@@ -370,224 +417,137 @@
             }
         }
 
-        /* Payment method switcher (bKash ↔ Nagad ↔ …) */
-        .pp-gateway-switcher {
+        /* Payment method picker */
+        .pp-pay-methods {
             margin-bottom: 1.25rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            background: var(--pp-bg);
+            border: 1px solid var(--pp-border);
         }
 
-        .pp-gateway-switcher__toggle {
-            width: 100%;
+        .pp-pay-methods__head {
+            margin-bottom: 0.75rem;
+        }
+
+        .pp-pay-methods__title {
+            margin: 0;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--pp-muted);
+        }
+
+        .pp-pay-methods__hint {
+            margin: 0.25rem 0 0;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            color: #9ca3af;
+        }
+
+        .pp-pay-methods__segments {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            padding: 0.75rem 0.9rem;
-            border: 1px solid var(--pp-border);
-            border-radius: 0.875rem;
+            gap: 0.35rem;
+            padding: 0.25rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0.75rem;
+            background: #e2e8f0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .pp-pay-methods__segment {
+            flex: 1 1 auto;
+            min-width: 0;
+            border: none;
+            border-radius: 0.5rem;
+            background: transparent;
+            color: #64748b;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            padding: 0.5rem 0.55rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .pp-pay-methods__segment.is-active {
             background: #fff;
             color: var(--pp-text);
-            cursor: pointer;
-            text-align: left;
-            transition: border-color 0.15s ease, background 0.15s ease;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
         }
 
-        .pp-gateway-switcher__toggle:hover,
-        .pp-gateway-switcher__toggle.is-open {
-            border-color: var(--pp-primary-ring);
-            background: var(--pp-primary-soft);
+        .pp-pay-methods__grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.5rem;
         }
 
-        .pp-gateway-switcher__toggle-text {
+        @media (max-width: 380px) {
+            .pp-pay-methods__grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .pp-pay-tile {
+            position: relative;
             display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
-            min-width: 0;
+            align-items: center;
+            justify-content: center;
+            min-height: 3.5rem;
+            padding: 0.5rem;
+            border: 2px solid #fff;
+            border-radius: 0.75rem;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+            text-decoration: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
         }
 
-        .pp-gateway-switcher__toggle-title {
-            font-size: 0.875rem;
-            font-weight: 700;
-            color: var(--pp-text);
+        .pp-pay-tile:hover {
+            border-color: var(--pp-border);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
         }
 
-        .pp-gateway-switcher__toggle-hint {
-            font-size: 0.75rem;
-            color: var(--pp-muted);
-            line-height: 1.35;
+        .pp-pay-tile.is-active {
+            border-color: var(--pp-brand);
+            box-shadow: 0 0 0 1px var(--pp-brand), 0 4px 14px var(--pp-brand-soft);
+            pointer-events: none;
         }
 
-        .pp-gateway-switcher__toggle-icon {
-            flex-shrink: 0;
-            width: 1.5rem;
-            height: 1.5rem;
-            color: var(--pp-primary);
-            transition: transform 0.2s ease;
+        .pp-pay-tile img {
+            max-height: 2.125rem;
+            max-width: 100%;
+            object-fit: contain;
         }
 
-        .pp-gateway-switcher__toggle-icon svg {
+        .pp-pay-tile__check {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            width: 1rem;
+            height: 1rem;
+            color: var(--pp-brand);
+        }
+
+        .pp-pay-tile__check svg {
             width: 100%;
             height: 100%;
         }
 
-        .pp-gateway-switcher__toggle.is-open .pp-gateway-switcher__toggle-icon {
-            transform: rotate(180deg);
-        }
-
-        .pp-gateway-switcher__quick {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.65rem;
-            padding-bottom: 0.15rem;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scroll-snap-type: x proximity;
-        }
-
-        .pp-gateway-switcher__quick::-webkit-scrollbar {
-            height: 4px;
-        }
-
-        .pp-gateway-switcher__quick-item {
-            flex: 0 0 auto;
-            scroll-snap-align: start;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 4.25rem;
-            height: 3rem;
-            border: 2px solid var(--pp-border);
-            border-radius: 0.75rem;
-            background: #fff;
-            padding: 0.35rem;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .pp-gateway-switcher__quick-item img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        .pp-gateway-switcher__quick-item.is-active {
-            border-color: var(--pp-primary);
-            box-shadow: 0 0 0 1px var(--pp-primary);
-            pointer-events: none;
-        }
-
-        .pp-gateway-switcher__panel {
-            margin-top: 0.75rem;
-            padding: 0.75rem;
-            border: 1px solid var(--pp-border);
-            border-radius: 1rem;
-            background: #f9fafb;
-        }
-
-        .pp-gateway-switcher__tabs {
-            display: flex;
-            gap: 0.5rem;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 0.35rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .pp-gateway-switcher__tab {
-            flex: 0 0 auto;
-            border: 1px solid var(--pp-border);
-            border-radius: 9999px;
-            background: #fff;
+        .pp-pay-steps__title {
+            margin: 0 0 0.75rem;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
             color: var(--pp-muted);
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.4rem 0.85rem;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.15s ease;
         }
 
-        .pp-gateway-switcher__tab.is-active {
-            border-color: var(--pp-primary);
-            background: var(--pp-primary);
-            color: var(--pp-on-primary, #fff);
-        }
-
-        .pp-gateway-switcher__grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.5rem;
-        }
-
-        @media (min-width: 480px) {
-            .pp-gateway-switcher__grid {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-            }
-        }
-
-        .pp-gateway-switcher__item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.5rem 0.35rem;
-            border: 2px solid var(--pp-border);
-            border-radius: 0.75rem;
-            background: #fff;
-            text-decoration: none;
-            color: inherit;
-            transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
-        }
-
-        .pp-gateway-switcher__item:hover {
-            border-color: var(--pp-primary-ring);
-            transform: translateY(-1px);
-        }
-
-        .pp-gateway-switcher__item.is-active {
-            border-color: var(--pp-primary);
-            box-shadow: 0 0 0 1px var(--pp-primary);
-            pointer-events: none;
-        }
-
-        .pp-gateway-switcher__item-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 2.25rem;
-            width: 100%;
-        }
-
-        .pp-gateway-switcher__item-logo img {
-            max-height: 2rem;
-            max-width: 100%;
-            object-fit: contain;
-        }
-
-        .pp-gateway-switcher__item-name {
-            font-size: 0.625rem;
-            font-weight: 600;
-            line-height: 1.2;
-            text-align: center;
-            color: #4b5563;
-            word-break: break-word;
-        }
-
-        @media (min-width: 640px) {
-            .pp-gateway-switcher__quick {
-                display: none;
-            }
-
-            .pp-gateway-switcher__toggle {
-                display: none;
-            }
-
-            .pp-gateway-switcher__panel {
-                display: block !important;
-                margin-top: 0;
-            }
-
-            .pp-gateway-switcher__panel[hidden] {
-                display: block !important;
-            }
+        .pp-pay-steps {
+            margin-top: 0.25rem;
         }
     </style>
 
@@ -642,21 +602,23 @@
                   </button>
               </div>
 
-              <div class="pp-gateway-hero">
-                  <img src="<?php echo htmlspecialchars($gateway_info['gateway']['logo'], ENT_QUOTES);?>" alt="" class="pp-gateway-logo">
-                  <?php if (!empty($data['transaction']['local_net_amount'])): ?>
-                      <div class="pp-gateway-amount">
-                          <?php echo number_format((float) $data['transaction']['local_net_amount'], 2); ?>
-                          <?php echo htmlspecialchars((string) ($data['transaction']['local_currency'] ?? 'BDT'), ENT_QUOTES); ?>
-                      </div>
+              <div class="pp-pay-header<?php echo $pp_show_method_switcher ? '' : ' pp-pay-header--solo'; ?>">
+                  <?php if (! $pp_show_method_switcher): ?>
+                      <img src="<?php echo htmlspecialchars($gateway_info['gateway']['logo'], ENT_QUOTES);?>" alt="" class="pp-gateway-logo">
                   <?php endif; ?>
+                  <p class="pp-pay-header__label"><?php echo $data['lang']['complete_payment']; ?></p>
+                  <p class="pp-pay-header__amount">
+                      <?php echo number_format($pp_pay_amount, 2); ?>
+                      <span class="pp-pay-header__currency"><?php echo htmlspecialchars($pp_pay_currency, ENT_QUOTES); ?></span>
+                  </p>
               </div>
 
               <?php include __DIR__.'/gateway-switcher.php'; ?>
 
-              <?php
-                 pp_gateway_render($_GET['gateway'] ?? '', $data);
-              ?>
+              <div class="pp-pay-steps">
+                  <h3 class="pp-pay-steps__title"><?php echo $data['lang']['how_to_pay']; ?></h3>
+                  <?php pp_gateway_render($_GET['gateway'] ?? '', $data); ?>
+              </div>
           </div>
         </div>
 
