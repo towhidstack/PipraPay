@@ -16,13 +16,23 @@ if [ "$IMAGICK_STATUS" != "enabled" ]; then
     exit 1
 fi
 
-if [ -x /assets/start.sh ]; then
-    exec /assets/start.sh
+# Nixpacks PHP (Coolify default): prestart.mjs + php-fpm + nginx
+if [ -f /assets/scripts/prestart.mjs ] && [ -f /app/nginx.template.conf ]; then
+    node /assets/scripts/prestart.mjs /app/nginx.template.conf /nginx.conf
+    php-fpm -y /assets/php-fpm.conf -D
+    exec nginx -c /nginx.conf -g 'daemon off;'
 fi
 
+# Dockerfile image: supervisord
 if [ -f /etc/supervisor/conf.d/supervisord.conf ]; then
     exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
 fi
 
-php-fpm -D 2>/dev/null || /usr/local/sbin/php-fpm -D
-exec nginx -g 'daemon off;'
+PHP_FPM="$(command -v php-fpm 2>/dev/null || true)"
+if [ -n "$PHP_FPM" ]; then
+    "$PHP_FPM" -D
+    exec nginx -g 'daemon off;'
+fi
+
+echo "[piprapay] ERROR: could not start nginx/php-fpm (missing Nixpacks assets?)" >&2
+exit 1
