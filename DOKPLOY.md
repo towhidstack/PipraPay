@@ -126,7 +126,24 @@ cat /app/pp-config.php
 
 ---
 
-## 5. Health check
+## 5. Whitelist TaqwaMart domains (required for Laravel checkout)
+
+`POST /api/checkout/redirect` validates **return** and **webhook** URLs against the **Domains** table.
+
+In PipraPay admin → **Domains**, add each host your store uses (from TaqwaMart `APP_URL`), for example:
+
+| Domain | Status |
+|--------|--------|
+| `taqwamart.bd` | Active |
+| `www.taqwamart.bd` | Active (if you use www) |
+
+Without this, Laravel (`GuzzleHttp`) reaches PipraPay but gets **HTTP 400** (~105 bytes = often `INVALID_API_KEY`; longer body = `INVALID_URL` domain not whitelisted).
+
+Copy the API key with the **copy button** on the API list (full 50 characters), not the truncated visible text in the input.
+
+---
+
+## 6. Health check
 
 | Path | `/pp-health.php` |
 | Port | `8080` |
