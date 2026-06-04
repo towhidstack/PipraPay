@@ -15,18 +15,12 @@ piprapay_restore_config
 bash /app/docker/write-pp-config-from-env.sh || true
 piprapay_persist_config
 
-chown -R www-data:www-data /app/pp-media /app/pp-media/storage 2>/dev/null || true
-chmod -R ug+rwX /app/pp-media/storage 2>/dev/null || true
-chmod 775 /app/pp-media/storage 2>/dev/null || true
-
-# Dokploy/host volumes are sometimes mounted as root:root — ensure PHP-FPM can write uploads.
-if ! su -s /bin/sh www-data -c "test -w /app/pp-media/storage" 2>/dev/null; then
-    echo "[piprapay] WARN: www-data cannot write to /app/pp-media/storage — applying permissive mode" >&2
-    chmod 777 /app/pp-media/storage 2>/dev/null || true
-fi
+mkdir -p /app/pp-media/storage
+chown -R www-data:www-data /app/pp-media 2>/dev/null || true
+chmod -R 777 /app/pp-media/storage 2>/dev/null || true
 
 su -s /bin/sh www-data -c "touch /app/pp-media/storage/.write-test && rm -f /app/pp-media/storage/.write-test" 2>/dev/null \
-    || echo "[piprapay] WARN: upload directory write test failed; logo/QR uploads may fail" >&2
+    || echo "[piprapay] WARN: www-data cannot write to /app/pp-media/storage — check Dokploy volume mount" >&2
 
 if [ -f /app/pp-config.php ]; then
     chown www-data:www-data /app/pp-config.php

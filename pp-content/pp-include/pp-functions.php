@@ -1755,30 +1755,81 @@
 
     function pp_storage_directory(): string
     {
-        $dir = dirname(__DIR__, 2).'/pp-media/storage';
+        $configured = getenv('PIPRAPAY_STORAGE_PATH');
+        $dir = is_string($configured) && trim($configured) !== ''
+            ? trim($configured)
+            : dirname(__DIR__, 2).'/pp-media/storage';
 
-        if (! is_dir($dir) && ! @mkdir($dir, 0775, true)) {
-            return rtrim($dir, '/').'/';
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0777, true);
         }
 
-        if (is_dir($dir) && ! is_writable($dir)) {
-            @chmod($dir, 0775);
+        $resolved = realpath($dir);
+
+        if (is_string($resolved) && $resolved !== '') {
+            $dir = $resolved;
         }
 
         return rtrim($dir, '/').'/';
     }
 
+    function pp_storage_can_write(string $directory): bool
+    {
+        $directory = rtrim($directory, '/').'/';
+        $probe = $directory.'.pp-write-probe-'.bin2hex(random_bytes(4));
+
+        if (@file_put_contents($probe, 'ok') !== false) {
+            @unlink($probe);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    function pp_storage_prepare_writable(string $directory): bool
+    {
+        $directory = rtrim($directory, '/').'/';
+
+        if (pp_storage_can_write($directory)) {
+            return true;
+        }
+
+        @chmod($directory, 0777);
+
+        if (pp_storage_can_write($directory)) {
+            return true;
+        }
+
+        @chmod(dirname(rtrim($directory, '/')), 0777);
+
+        return pp_storage_can_write($directory);
+    }
+
+    function pp_runtime_user_label(): string
+    {
+        if (function_exists('posix_getpwuid') && function_exists('posix_geteuid')) {
+            $info = posix_getpwuid(posix_geteuid());
+
+            if (is_array($info) && ! empty($info['name'])) {
+                return (string) $info['name'];
+            }
+        }
+
+        return 'unknown';
+    }
+
     function uploadImage($file, $max_file_size) {
         $upload_directory = pp_storage_directory();
 
-        if (! is_dir($upload_directory)) {
-            return json_encode(['status' => false, 'message' => 'Failed to create storage folder (pp-media/storage).']);
+        if (! is_dir($upload_directory) && ! @mkdir($upload_directory, 0777, true)) {
+            return json_encode(['status' => false, 'message' => 'Failed to create storage folder: '.$upload_directory]);
         }
 
-        if (! is_writable($upload_directory)) {
+        if (! pp_storage_prepare_writable($upload_directory)) {
             return json_encode([
                 'status' => false,
-                'message' => 'Storage folder is not writable. On the server run: chown -R www-data:www-data /app/pp-media/storage && chmod 775 /app/pp-media/storage',
+                'message' => 'Cannot write to '.$upload_directory.' (PHP runs as '.pp_runtime_user_label().'). Redeploy PipraPay or run: chmod -R 777 /app/pp-media/storage',
             ]);
         }
 
