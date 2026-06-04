@@ -23,6 +23,17 @@ Alternative: **Nixpacks** + `nixpacks.toml` (first build 5–15 min).
 
 **Never use `localhost` in the installer** — use the MariaDB **service name** as host.
 
+### MariaDB auth (same as Coolify)
+
+In Coolify **Custom Docker Options** you may have used:
+
+```text
+--default-authentication-plugin=mysql_native_password
+```
+
+On Dokploy: MariaDB resource → **Advanced** → add that argument → restart DB.  
+If the DB was created earlier without it, reset the database or `ALTER USER ... IDENTIFIED VIA mysql_native_password` (see `app/DOKPLOY.md`).
+
 ---
 
 ## 3. Environment variables
@@ -31,7 +42,10 @@ See `.env.dokploy.example`.
 
 ```env
 PORT=8080
+PIPRAPAY_APP_URL=https://pay.taqwamart.bd
 ```
+
+`PIPRAPAY_APP_URL` must use **`https://`**. Without it, assets load as `http://...` and the browser blocks them (Mixed Content) when users visit over HTTPS.
 
 ### Web installer (default)
 

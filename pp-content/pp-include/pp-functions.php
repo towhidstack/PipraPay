@@ -11,11 +11,66 @@
     }
 
     $pp_functions_loaded = true;
-    
+
+    /**
+     * True when the client request is HTTPS (direct TLS or reverse proxy headers).
+     */
+    function pp_request_is_https(): bool {
+        $force = getenv('PIPRAPAY_FORCE_HTTPS');
+        if ($force === '1' || strtolower((string) $force) === 'true') {
+            return true;
+        }
+
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            return true;
+        }
+
+        if (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
+            return true;
+        }
+
+        if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+            $proto = strtolower(trim(explode(',', (string) $_SERVER['HTTP_X_FORWARDED_PROTO'])[0]));
+            if ($proto === 'https') {
+                return true;
+            }
+        }
+
+        if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') {
+            return true;
+        }
+
+        if (!empty($_SERVER['HTTP_CF_VISITOR'])) {
+            $cf = json_decode((string) $_SERVER['HTTP_CF_VISITOR'], true);
+            if (is_array($cf) && ($cf['scheme'] ?? '') === 'https') {
+                return true;
+            }
+        }
+
+        $appUrl = getenv('PIPRAPAY_APP_URL');
+        if (is_string($appUrl) && str_starts_with(strtolower(trim($appUrl)), 'https://')) {
+            return true;
+        }
+
+        return false;
+    }
+
     function pp_site_url($type = "Full") {
-        // Detect protocol
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' 
-                    || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+        $appUrl = getenv('PIPRAPAY_APP_URL');
+        if (is_string($appUrl) && ($appUrl = trim($appUrl)) !== '') {
+            $appUrl = rtrim($appUrl, '/');
+            if (strtolower($type) === 'fulldomain') {
+                return $appUrl;
+            }
+            if (strtolower($type) === 'maindomain') {
+                $host = parse_url($appUrl, PHP_URL_HOST);
+                return is_string($host) && $host !== '' ? $host : 'localhost';
+            }
+            $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+            return $appUrl . $requestUri;
+        }
+
+        $protocol = pp_request_is_https() ? 'https://' : 'http://';
 
         // Full host with subdomain
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -200,7 +255,7 @@
     function setsCookie($cookieName, $cookieValue, $days = 365) {
         $expiryTime = time() + ($days * 24 * 60 * 60);
     
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
+        $isSecure = pp_request_is_https();
     
         setcookie($cookieName, $cookieValue, [
             'expires' => $expiryTime,
