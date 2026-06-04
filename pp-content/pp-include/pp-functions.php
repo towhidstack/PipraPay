@@ -227,19 +227,26 @@
     }
 
     function getAuthorizationHeader() {
+        $known = [
+            'mh-piprapay-api-key',
+            'mhs-piprapay-api-key',
+        ];
+
         if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-            if (isset($headers['MHS-PIPRAPAY-API-KEY'])) {
-                return trim($headers['MHS-PIPRAPAY-API-KEY']);
+            foreach (getallheaders() as $name => $value) {
+                if (in_array(strtolower((string) $name), $known, true)) {
+                    return trim((string) $value);
+                }
             }
         }
-    
+
         foreach ($_SERVER as $key => $value) {
-            if (stripos($key, 'HTTP_MHS_PIPRAPAY_API_KEY') !== false) {
-                return trim($value);
+            $upper = strtoupper((string) $key);
+            if ($upper === 'HTTP_MH_PIPRAPAY_API_KEY' || $upper === 'HTTP_MHS_PIPRAPAY_API_KEY') {
+                return trim((string) $value);
             }
         }
-    
+
         return null;
     }
 
