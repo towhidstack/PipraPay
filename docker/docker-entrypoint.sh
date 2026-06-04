@@ -15,12 +15,8 @@ piprapay_restore_config
 bash /app/docker/write-pp-config-from-env.sh || true
 piprapay_persist_config
 
-mkdir -p /app/pp-media/storage
-chown -R www-data:www-data /app/pp-media 2>/dev/null || true
-chmod -R 777 /app/pp-media/storage 2>/dev/null || true
-
-su -s /bin/sh www-data -c "touch /app/pp-media/storage/.write-test && rm -f /app/pp-media/storage/.write-test" 2>/dev/null \
-    || echo "[piprapay] WARN: www-data cannot write to /app/pp-media/storage — check Dokploy volume mount" >&2
+# Re-apply on every container start (redeploy replaces the container; volume keeps root:root).
+bash /app/docker/fix-storage-permissions.sh || echo "[piprapay] WARN: upload directory fix failed — logo/QR uploads may fail until volume is fixed" >&2
 
 if [ -f /app/pp-config.php ]; then
     chown www-data:www-data /app/pp-config.php

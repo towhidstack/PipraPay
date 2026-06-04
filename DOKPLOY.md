@@ -93,6 +93,43 @@ Fix (pick one or both):
 
 Without volume or env, you will see Step 1 (Requirements) again even though the database still has your admin and gateways.
 
+### Upload permissions reset after every redeploy (logo / QR / favicon fail)
+
+**Why manual `chown` / `chmod` in Terminal does not stick**
+
+| Cause | What happens |
+|-------|----------------|
+| **Redeploy = new container** | Terminal commands fix only the **current** container. Dokploy/Railway replaces it on redeploy; permissions must be fixed in **entrypoint on start** (we do this automatically). |
+| **Persistent volume owned by `root:root`** | Mount `/app/pp-media/storage` as a **named volume** (Dokploy “Volume”, not a random host path). Bind mounts often stay `755` and `chown` from inside the container may fail on NFS/root_squash. |
+| **Multiple replicas** | If scale &gt; 1, fixing one container does not fix others. Entrypoint runs on **each** replica at start. |
+| **Old entrypoint hid errors** | `2>/dev/null \|\| true` swallowed failed `chown`. Check deploy logs for `[piprapay] storage writable by www-data OK`. |
+
+**Correct Dokploy setup**
+
+1. Application → **Volumes** → mount **`/app/pp-media/storage`** (named volume, e.g. `piprapay-media`).
+2. Redeploy PipraPay (do **not** rely on manual Terminal `chown` after each deploy).
+3. Deploy logs must show:
+   ```text
+   [piprapay] chmod 777 on /app/pp-media/storage OK
+   [piprapay] storage writable by www-data OK
+   ```
+4. Verify: `https://pay.taqwamart.bd/pp-health.php` → `"storage_writable_probe": true`
+
+**If logs still show ERROR**
+
+- Switch from host bind mount to a **named volume**.
+- Ensure only **one** volume mount at `/app/pp-media/storage` (not the whole `/app`).
+- Scale replicas to **1** while testing, then redeploy.
+
+**You should not need to run this after every deploy** (entrypoint handles it):
+
+```bash
+chown -R www-data:www-data /app/pp-media/storage
+chmod -R 777 /app/pp-media/storage
+```
+
+Run manually only once to debug; if it works in Terminal but fails after redeploy, fix the **volume type** in Dokploy.
+
 ### Tables exist but installer Step 2 appears
 
 That is normal when **`pp-config.php` is missing** in the container. PipraPay does not check “tables exist” to skip install — it only checks for `pp-config.php`.

@@ -50,6 +50,7 @@ COPY . .
 
 RUN mkdir -p pp-media/storage \
     && chmod +x /usr/local/bin/docker-entrypoint.sh \
+        docker/fix-storage-permissions.sh \
         docker/production-start.sh \
         docker/coolify-start.sh \
         docker/write-pp-config-from-env.sh \
