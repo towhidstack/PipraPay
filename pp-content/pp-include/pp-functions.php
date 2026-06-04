@@ -2949,7 +2949,7 @@
             }
 
             if(isset($instructions)){
-                echo '<ol class="payment-instructions">';
+                echo '<ol class="payment-instructions payment-steps">';
 
                 $rowli = 0;
 
@@ -3033,27 +3033,29 @@
             if(isset($gateway_info)){
                 if(isset($gateway_info['gateway_type']) && $gateway_info['gateway_type'] == "automation"){
                     echo '
-                        <form class="payment-form-submit" method="POST" enctype="multipart/form-data">
+                        <div class="pp-verify-section">
+                        <form class="payment-form-submit pp-verify-form" method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="action-v2" value="transaction-verify">
                             <input type="hidden" name="gateway-id" value="'.$data['gateway']['gateway_id'].'">
                             <input type="hidden" name="transaction-id" value="'.$data['transaction']['ref'].'">
 
-                            <div class="form-group  mt-3" style="display: none">
+                            <div class="form-group pp-form-group mt-3" style="display: none">
                                 <label class="form-label">'.$data['lang']['mobile_number'].'</label>
                                 <div class="form-control-wrap">
                                     <input type="text" class="form-control" name="mobile_number" placeholder="'.$data['lang']['mobile_number'].'"> 
                                 </div>
                             </div>
 
-                            <div class="form-group  mt-3">
+                            <div class="form-group pp-form-group mt-3">
                                 <label class="form-label">'.$data['lang']['transaction_id'].'</label>
                                 <div class="form-control-wrap">
-                                    <input type="text" class="form-control" name="trxid" placeholder="'.$data['lang']['enter_transaction_id'].'" required=""> 
+                                    <input type="text" class="form-control pp-input" name="trxid" placeholder="'.$data['lang']['enter_transaction_id'].'" required="" autocomplete="off" inputmode="text"> 
                                 </div>
                             </div>
 
-                            <button class="btn btn-primary w-100 payment-form-btn mt-3" type="submit">'.$data['lang']['verify'].'</button>
+                            <button class="btn btn-primary w-100 payment-form-btn pp-submit-btn mt-3" type="submit">'.$data['lang']['verify'].'</button>
                         </form>
+                        </div>
 
                         <script data-cfasync="false">
                             document.addEventListener("DOMContentLoaded", function() {
@@ -3106,20 +3108,22 @@
                 if(isset($gateway_info['gateway_type']) && $gateway_info['gateway_type'] == "manual"){
                     if(isset($gateway_info['verify_by']) && $gateway_info['verify_by'] == "trxid"){
                         echo '
-                            <form class="payment-form-submit" method="POST" enctype="multipart/form-data">
+                            <div class="pp-verify-section">
+                            <form class="payment-form-submit pp-verify-form" method="POST" enctype="multipart/form-data">
                                 <input type="hidden" name="action-v2" value="transaction-verify">
                                 <input type="hidden" name="gateway-id" value="'.$data['gateway']['gateway_id'].'">
                                 <input type="hidden" name="transaction-id" value="'.$data['transaction']['ref'].'">
 
-                                <div class="form-group  mt-3">
+                                <div class="form-group pp-form-group mt-3">
                                     <label class="form-label">'.$data['lang']['transaction_id'].'</label>
                                     <div class="form-control-wrap">
-                                        <input type="text" class="form-control" name="trxid" placeholder="'.$data['lang']['enter_transaction_id'].'" required=""> 
+                                        <input type="text" class="form-control pp-input" name="trxid" placeholder="'.$data['lang']['enter_transaction_id'].'" required="" autocomplete="off" inputmode="text"> 
                                     </div>
                                 </div>
 
-                                <button class="btn btn-primary w-100 payment-form-btn mt-3" type="submit">'.$data['lang']['submit'].'</button>
+                                <button class="btn btn-primary w-100 payment-form-btn pp-submit-btn mt-3" type="submit">'.$data['lang']['submit'].'</button>
                             </form>
+                            </div>
 
                             <script data-cfasync="false">
                                 document.addEventListener("DOMContentLoaded", function() {
@@ -3166,20 +3170,22 @@
                     }else{
                         if(isset($gateway_info['verify_by']) && $gateway_info['verify_by'] == "slip"){
                             echo '
-                                <form class="payment-form-submit" method="POST" enctype="multipart/form-data">
+                                <div class="pp-verify-section">
+                                <form class="payment-form-submit pp-verify-form" method="POST" enctype="multipart/form-data">
                                     <input type="hidden" name="action-v2" value="transaction-verify">
                                     <input type="hidden" name="gateway-id" value="'.$data['gateway']['gateway_id'].'">
                                     <input type="hidden" name="transaction-id" value="'.$data['transaction']['ref'].'">
 
-                                    <div class="form-group  mt-3">
+                                    <div class="form-group pp-form-group mt-3">
                                         <label class="form-label">'.$data['lang']['upload_slip'].'</label>
                                         <div class="form-control-wrap">
-                                            <input type="file" class="form-control" name="slip" accept = "image/*" placeholder="'.$data['lang']['upload_slip'].'" required=""> 
+                                            <input type="file" class="form-control pp-input" name="slip" accept="image/*" required=""> 
                                         </div>
                                     </div>
 
-                                    <button class="btn btn-primary w-100 payment-form-btn mt-3" type="submit">'.$data['lang']['submit'].'</button>
+                                    <button class="btn btn-primary w-100 payment-form-btn pp-submit-btn mt-3" type="submit">'.$data['lang']['submit'].'</button>
                                 </form>
+                                </div>
 
                                 <script data-cfasync="false">
                                     document.addEventListener("DOMContentLoaded", function() {

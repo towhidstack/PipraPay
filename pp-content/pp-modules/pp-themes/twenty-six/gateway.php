@@ -40,86 +40,250 @@
     <?php
        echo pp_assets('head');
     ?>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        .container{
-            max-width: 650px; 
+        :root {
+            --pp-primary: <?php echo $gateway_info['gateway']['primary_color'];?>;
+            --pp-primary-soft: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.10)?>;
+            --pp-primary-ring: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.22)?>;
+            --pp-on-primary: <?php echo $gateway_info['gateway']['text_color'];?>;
+            --pp-surface: #ffffff;
+            --pp-muted: #6b7280;
+            --pp-text: #111827;
+            --pp-border: #e5e7eb;
+        }
+
+        body.pp-gateway-page {
+            font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .pp-gateway-wrap {
+            max-width: 440px;
             width: 100%;
+            margin: 0 auto;
+            padding: 1.25rem 1rem 2rem;
         }
-        .company-logo{
-            margin-top: 15px;
-            height: 50px;
-            margin-bottom: 15px;
+
+        .pp-gateway-card {
+            background: var(--pp-surface);
+            border: 1px solid var(--pp-border);
+            border-radius: 1.25rem;
+            box-shadow: 0 18px 48px -28px rgba(15, 23, 42, 0.28);
+            overflow: hidden;
         }
-        .btn-primary {
+
+        .pp-gateway-card__body {
+            padding: 1.25rem 1.25rem 1.5rem;
+        }
+
+        .pp-gateway-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .pp-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 1px solid var(--pp-border);
+            border-radius: 9999px;
+            background: #fff;
+            color: var(--pp-primary);
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+        }
+
+        .pp-icon-btn:hover {
+            background: var(--pp-primary-soft);
+            border-color: var(--pp-primary-ring);
+        }
+
+        .pp-icon-btn:active {
+            transform: scale(0.97);
+        }
+
+        .pp-icon-btn svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .pp-gateway-hero {
+            text-align: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .pp-gateway-logo {
+            height: 3.25rem;
+            width: auto;
+            max-width: 180px;
+            object-fit: contain;
+            margin-bottom: 0.75rem;
+        }
+
+        .pp-gateway-amount {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 9999px;
+            background: var(--pp-primary-soft);
+            color: var(--pp-primary);
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-primary,
+        .pp-submit-btn {
             --tblr-btn-border-color: transparent;
             --tblr-btn-hover-border-color: transparent;
             --tblr-btn-active-border-color: transparent;
-            --tblr-btn-color: <?php echo $gateway_info['gateway']['text_color'];?>;
-            --tblr-btn-bg: <?php echo $gateway_info['gateway']['primary_color'];?>;
-            --tblr-btn-hover-color: <?php echo $gateway_info['gateway']['text_color'];?>;
-            --tblr-btn-hover-bg: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.80)?>;
-            --tblr-btn-active-color: <?php echo $gateway_info['gateway']['text_color'];?>;
-            --tblr-btn-active-bg: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.80)?>;
-            --tblr-btn-disabled-bg: <?php echo $gateway_info['gateway']['primary_color'];?>;
-            --tblr-btn-disabled-color: <?php echo $gateway_info['gateway']['text_color'];?>;
-            --tblr-btn-box-shadow: <?php echo $gateway_info['gateway']['text_color'];?>;
-        }
-        .form-control:focus{
-            border-color: <?php echo $gateway_info['gateway']['primary_color'];?>;
-            box-shadow: var(--tblr-shadow-input), 0 0 0 .25rem <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.25)?>;
-        }
-
-        .payment-instructions{
-            background-color: <?php echo $gateway_info['gateway']['primary_color'];?>;
-            color: <?php echo $gateway_info['gateway']['text_color'];?>;
-
-            border-radius: 10px;
-            padding-top: 5px;
-            padding-bottom: 5px;
-            padding-left: 20px;
-            padding-right: 20px;
-            margin: 0px;
-        }
-        .payment-instructions li {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 15px 0;
-            word-break: break-word;
-            border-bottom: 1px solid <?php echo pp_hexToRgba($gateway_info['gateway']['text_color'], 0.25)?>;
+            --tblr-btn-color: var(--pp-on-primary);
+            --tblr-btn-bg: var(--pp-primary);
+            --tblr-btn-hover-color: var(--pp-on-primary);
+            --tblr-btn-hover-bg: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.88)?>;
+            --tblr-btn-active-color: var(--pp-on-primary);
+            --tblr-btn-active-bg: <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.82)?>;
+            --tblr-btn-disabled-bg: var(--pp-primary);
+            --tblr-btn-disabled-color: var(--pp-on-primary);
+            min-height: 3rem;
+            border-radius: 0.875rem !important;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            box-shadow: 0 10px 24px -14px <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.65)?>;
         }
 
-        .payment-instructions li .dot{
-            width: 6px;
-            height: 6px;
-            border-radius: 100%;
-            background-color: <?php echo $gateway_info['gateway']['text_color'];?>;
-            min-width: 6px;
-        }
-        .payment-instructions li p{
-            margin: 0;
+        .pp-input,
+        .pp-verify-form .form-control {
+            min-height: 3rem;
+            border-radius: 0.75rem;
+            border-color: var(--pp-border);
+            padding-left: 0.9rem;
+            padding-right: 0.9rem;
+            font-size: 1rem;
         }
 
-        .payment-instructions li .dynamic-value{
+        .pp-input:focus,
+        .pp-verify-form .form-control:focus {
+            border-color: var(--pp-primary);
+            box-shadow: 0 0 0 3px var(--pp-primary-ring);
+        }
+
+        .pp-verify-section {
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--pp-border);
+        }
+
+        .pp-verify-form .form-label {
+            font-size: 0.8125rem;
             font-weight: 600;
+            color: var(--pp-muted);
+            margin-bottom: 0.4rem;
         }
 
-        .payment-instructions li svg{
-            width: 17px;
-            height: 17px;
-        }
-        .payment-instructions li .button-icon{
-            padding: 5px;
-            margin-left: 10px;
-            background-color: <?php echo $gateway_info['gateway']['text_color'];?>;
-            color: <?php echo $gateway_info['gateway']['primary_color'];?>;
-            border-radius: 5px;
-            cursor: pointer;
+        .pp-form-group {
+            margin-bottom: 0.25rem;
         }
 
-        .payment-instructions li:last-child {
+        /* Step-by-step instructions (modern light card) */
+        .payment-instructions.payment-steps {
+            list-style: none;
+            counter-reset: pp-step;
+            margin: 0 0 0;
+            padding: 0;
+            background: #f9fafb;
+            border: 1px solid var(--pp-border);
+            border-radius: 1rem;
+            overflow: hidden;
+            color: var(--pp-text);
+        }
+
+        .payment-instructions.payment-steps li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.95rem 1rem;
+            word-break: break-word;
+            border-bottom: 1px solid var(--pp-border);
+            counter-increment: pp-step;
+        }
+
+        .payment-instructions.payment-steps li:last-child {
             border-bottom: none;
+        }
+
+        .payment-instructions.payment-steps li .dot {
+            display: none;
+        }
+
+        .payment-instructions.payment-steps li::before {
+            content: counter(pp-step);
+            flex-shrink: 0;
+            width: 1.75rem;
+            height: 1.75rem;
+            margin-top: 0.1rem;
+            border-radius: 9999px;
+            background: var(--pp-primary);
+            color: var(--pp-on-primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            line-height: 1.75rem;
+            text-align: center;
+        }
+
+        .payment-instructions.payment-steps li p {
+            margin: 0;
+            flex: 1;
+            font-size: 0.9375rem;
+            line-height: 1.55;
+            color: #374151;
+        }
+
+        .payment-instructions.payment-steps li .dynamic-value {
+            display: inline-block;
+            margin-top: 0.15rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.5rem;
+            background: var(--pp-primary-soft);
+            color: var(--pp-primary);
+            font-weight: 700;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+
+        .payment-instructions.payment-steps li svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .payment-instructions.payment-steps li .button-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            padding: 0.35rem;
+            margin-left: 0.35rem;
+            background: #fff;
+            color: var(--pp-primary);
+            border: 1px solid var(--pp-primary-ring);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.12s ease;
+        }
+
+        .payment-instructions.payment-steps li .button-icon:hover {
+            background: var(--pp-primary-soft);
+            transform: translateY(-1px);
         }
 
         .bp-modal {
@@ -227,7 +391,7 @@
             echo $analyticsCode;
         }
 
-        $bgStyle = 'background-color:#f8f9fa;';
+        $bgStyle = 'background: linear-gradient(160deg, #f3f4f6 0%, #eef2f7 45%, #f8fafc 100%);';
         if (!empty($data['options']['enable_bg_image']) &&$data['options']['enable_bg_image'] === 'enabled' &&!empty($data['options']['background_image'])) {
             $bgImage = $data['options']['background_image'];
             $bgStyle = "
@@ -240,20 +404,28 @@
         }
     ?>
 </head>
-<body style="<?= $bgStyle ?>" loading="lazy">
-    <div class="container container-tight py-4">
-        <div class="card">
-          <div class="card-body">
-              <div class="d-flex align-items-center justify-content-between border rounded p-2">
-                  <div onclick="location.href='<?php echo pp_checkout_address();?>'" style="text-align: right; cursor: pointer; color: <?php echo $data['options']['primary_color'];?>"><svg xmlns="http://www.w3.org/2000/svg" style=" padding: 6px; background-color: <?php echo pp_hexToRgba($data['options']['primary_color'], 0.05)?>; border-radius: 100%; width: 32px; height: 32px; " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-left"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /><path d="M5 12l6 6" /><path d="M5 12l6 -6" /></svg></div>
-                  <div class="btns-group d-flex gap-2">
-                      <div style="text-align: right; cursor: pointer; color: <?php echo $data['options']['primary_color'];?>" data-bs-target="#modal-language" data-bs-toggle="modal"><svg xmlns="http://www.w3.org/2000/svg" style=" padding: 6px; background-color: <?php echo pp_hexToRgba($data['options']['primary_color'], 0.05)?>; border-radius: 100%; width: 32px; height: 32px; " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-language"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" /><path d="M4 6.371h7" /><path d="M5 9c0 2.144 2.252 3.908 6 4" /><path d="M12 20l4 -9l4 9" /><path d="M19.1 18h-6.2" /><path d="M6.694 3l.793 .582" /></svg></div>
-                  </div>
+<body class="pp-gateway-page" style="<?= $bgStyle ?>" loading="lazy">
+    <div class="pp-gateway-wrap">
+        <div class="pp-gateway-card">
+          <div class="pp-gateway-card__body">
+              <div class="pp-gateway-toolbar">
+                  <button type="button" class="pp-icon-btn" onclick="location.href='<?php echo pp_checkout_address();?>'" aria-label="Back">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></svg>
+                  </button>
+                  <button type="button" class="pp-icon-btn" data-bs-target="#modal-language" data-bs-toggle="modal" aria-label="Language">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629"/><path d="M4 6.371h7"/><path d="M5 9c0 2.144 2.252 3.908 6 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/><path d="M6.694 3l.793 .582"/></svg>
+                  </button>
               </div>
 
-              <center>
-                  <img src="<?php echo $gateway_info['gateway']['logo'];?>" alt="" class="company-logo">
-              </center>
+              <div class="pp-gateway-hero">
+                  <img src="<?php echo htmlspecialchars($gateway_info['gateway']['logo'], ENT_QUOTES);?>" alt="" class="pp-gateway-logo">
+                  <?php if (!empty($data['transaction']['local_net_amount'])): ?>
+                      <div class="pp-gateway-amount">
+                          <?php echo number_format((float) $data['transaction']['local_net_amount'], 2); ?>
+                          <?php echo htmlspecialchars((string) ($data['transaction']['local_currency'] ?? 'BDT'), ENT_QUOTES); ?>
+                      </div>
+                  <?php endif; ?>
+              </div>
 
               <?php
                  pp_gateway_render($_GET['gateway'] ?? '', $data);
@@ -261,7 +433,7 @@
           </div>
         </div>
 
-        <center class="footer-branding" style="margin-top: 20px;"><?php echo $data['options']['watermark_text'];?></center>
+        <p class="footer-branding text-center text-muted" style="margin-top: 1.25rem; font-size: 0.8125rem;"><?php echo $data['options']['watermark_text'];?></p>
     </div>
 
     <div class="modal fade" id="modal-language" data-bs-keyboard="false" tabindex="-1" aria-labelledby="scrollableLabel" aria-hidden="true">
