@@ -922,6 +922,91 @@ body.pp-pay-flow {
     color: rgba(255, 255, 255, 0.82);
 }
 
+.pp-brand-panel .payment-instructions.payment-steps,
+.pp-brand-panel .pp-brand-steps {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    counter-reset: none;
+}
+
+.pp-brand-panel .payment-instructions.payment-steps li,
+.pp-brand-panel .pp-brand-steps li {
+    display: block;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 0;
+}
+
+.pp-brand-panel .payment-instructions.payment-steps li::before,
+.pp-brand-panel .pp-brand-steps li::before {
+    display: none;
+}
+
+.pp-brand-panel .payment-instructions.payment-steps li .dot,
+.pp-brand-panel .pp-brand-steps li .dot {
+    display: none;
+}
+
+.pp-brand-panel .payment-instructions.payment-steps li:last-child,
+.pp-brand-panel .pp-brand-steps li:last-child {
+    border-bottom: none;
+}
+
+.pp-brand-panel .payment-instructions.payment-steps li p,
+.pp-brand-panel .payment-instructions.payment-steps li .pp-step__text,
+.pp-brand-panel .pp-brand-steps li p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--pp-on-brand);
+}
+
+.pp-brand-panel .payment-instructions.payment-steps .dynamic-value,
+.pp-brand-panel .pp-brand-steps .dynamic-value {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: #fde047;
+    font-weight: 800;
+}
+
+.pp-brand-panel .pp-copy-chip,
+.pp-brand-panel .payment-instructions.payment-steps .pp-copy-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    min-height: 1.75rem;
+    border: none;
+    border-radius: 9999px;
+    background: #fff;
+    color: var(--pp-brand);
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    vertical-align: middle;
+    box-shadow: 0 4px 12px -6px rgba(15, 23, 42, 0.35);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.pp-brand-panel .pp-copy-chip:hover,
+.pp-brand-panel .payment-instructions.payment-steps .pp-copy-chip:hover {
+    filter: brightness(0.97);
+    transform: translateY(-1px);
+}
+
+.pp-brand-panel .pp-copy-chip:active,
+.pp-brand-panel .payment-instructions.payment-steps .pp-copy-chip:active {
+    transform: translateY(0);
+}
+
 .pp-brand-steps {
     list-style: none;
     margin: 0;
