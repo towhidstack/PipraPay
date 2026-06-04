@@ -28,7 +28,10 @@
     $pp_amount = money_round($data['transaction']['amount'] ?? 0, 2);
     $pp_currency = htmlspecialchars((string) ($data['transaction']['currency'] ?? 'BDT'), ENT_QUOTES);
     $pp_brand_name = htmlspecialchars((string) ($data['brand']['name'] ?? ''), ENT_QUOTES);
-    $pp_brand_logo = (string) ($data['brand']['favicon'] ?? $data['brand']['logo'] ?? '');
+    $pp_brand_logo = pp_resolve_media_url(
+        (string) ($data['brand']['favicon'] ?? ''),
+        pp_resolve_media_url((string) ($data['brand']['logo'] ?? ''))
+    );
     $pp_accent = trim((string) ($data['options']['primary_color'] ?? '#2b63d9'));
     $pp_on_accent = trim((string) ($data['options']['text_color'] ?? '#ffffff'));
 

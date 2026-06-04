@@ -199,7 +199,7 @@ if (!defined('PipraPay_INIT')) {
                                     </div>
 
                                     <div class="border rounded p-2 mt-2 d-flex align-items-center justify-content-center" style=" height: 90px; width: 90px; ">
-                                        <img src="<?php echo ($global_response_brand['response'][0]['favicon'] === '--' || $global_response_brand['response'][0]['favicon'] === '') ? $piprapay_favicon : $global_response_brand['response'][0]['favicon'];?>" accept="image/*" alt="" id="preview1">
+                                        <img src="<?php echo pp_resolve_media_url($global_response_brand['response'][0]['favicon'] ?? '', $piprapay_favicon ?? ''); ?>" accept="image/*" alt="" id="preview1">
                                     </div>
                                 </div>
 
@@ -212,7 +212,7 @@ if (!defined('PipraPay_INIT')) {
                                     </div>
 
                                     <div class="border rounded p-2 mt-2 d-flex align-items-center justify-content-center" style=" height: 90px; max-width: 300px; ">
-                                        <img src="<?php echo ($global_response_brand['response'][0]['logo'] === '--' || $global_response_brand['response'][0]['logo'] === '') ? $piprapay_logo_light : $global_response_brand['response'][0]['logo'];?>" accept="image/*" alt="" id="preview2" style=" max-width: 100%; max-height: 100%; ">
+                                        <img src="<?php echo pp_resolve_media_url($global_response_brand['response'][0]['logo'] ?? '', $piprapay_logo_light ?? ''); ?>" accept="image/*" alt="" id="preview2" style=" max-width: 100%; max-height: 100%; ">
                                     </div>
                                 </div>
                             </div>

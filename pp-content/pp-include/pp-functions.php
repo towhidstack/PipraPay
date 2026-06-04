@@ -1665,6 +1665,94 @@
         return $randomString . "." . $extension;
     }
 
+    function pp_storage_public_url(string $filename): string
+    {
+        $filename = ltrim(trim($filename), '/');
+
+        return rtrim(pp_site_url('fulldomain'), '/').'/pp-media/storage/'.$filename;
+    }
+
+    function pp_resolve_media_url(?string $value, string $fallback = ''): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || $value === '--') {
+            return $fallback;
+        }
+
+        if (preg_match('#^https?://#i', $value)) {
+            return $value;
+        }
+
+        if (str_starts_with($value, '/pp-media/storage/')) {
+            return rtrim(pp_site_url('fulldomain'), '/').$value;
+        }
+
+        if (str_starts_with($value, 'pp-media/storage/')) {
+            return rtrim(pp_site_url('fulldomain'), '/').'/'.$value;
+        }
+
+        return pp_storage_public_url($value);
+    }
+
+    function pp_storage_filename_from_url(?string $url): ?string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '' || $url === '--') {
+            return null;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH);
+
+        if (! is_string($path) || $path === '') {
+            $path = $url;
+        }
+
+        $basename = basename($path);
+
+        return $basename !== '' && $basename !== '.' ? $basename : null;
+    }
+
+    /**
+     * @return array{status: string, url?: string, file?: string, message?: string}
+     */
+    function pp_process_image_upload(?array $file, string $previousUrl = '', int $max_file_size = 2097152): array
+    {
+        if (! is_array($file) || ! isset($file['error'])) {
+            return ['status' => 'skip'];
+        }
+
+        if ($file['error'] === UPLOAD_ERR_NO_FILE) {
+            return ['status' => 'skip'];
+        }
+
+        $decoded = json_decode(uploadImage($file, $max_file_size), true);
+
+        if (! is_array($decoded)) {
+            return ['status' => 'error', 'message' => 'Upload failed.'];
+        }
+
+        if (($decoded['status'] ?? false) === true && ! empty($decoded['file'])) {
+            $newUrl = pp_storage_public_url((string) $decoded['file']);
+
+            if ($previousUrl !== '' && $previousUrl !== '--') {
+                deleteImage($previousUrl);
+            }
+
+            return [
+                'status' => 'ok',
+                'url' => $newUrl,
+                'file' => (string) $decoded['file'],
+            ];
+        }
+
+        return [
+            'status' => 'error',
+            'message' => (string) ($decoded['message'] ?? 'Image upload failed.'),
+        ];
+    }
+
     function uploadImage($file, $max_file_size) {
         if (!is_dir(__DIR__.'/../../pp-media/storage')) {
             if (mkdir(__DIR__.'/../../pp-media/storage', 0755, true)) {
@@ -1676,9 +1764,17 @@
             $upload_directory = __DIR__ . '/../../pp-media/storage/';
         }
 
+        if (! is_array($file) || ! isset($file['error'])) {
+            return json_encode(['status' => 'skip', 'message' => 'No file provided.']);
+        }
+
+        if ($file['error'] === UPLOAD_ERR_NO_FILE) {
+            return json_encode(['status' => 'skip', 'message' => 'No file uploaded.']);
+        }
+
         // ─────────── VALIDATION ───────────
-        if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
-            return json_encode(['status' => false, 'message' => 'No file uploaded or upload failed.']);
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return json_encode(['status' => false, 'message' => 'Upload failed (error code '.$file['error'].').']);
         }
     
         if ($file['size'] > $max_file_size) {
@@ -1749,7 +1845,7 @@
         $upload_directory = __DIR__ . '/../../pp-media/storage/'; // Update path if different
     
         // Sanitize the filename to prevent directory traversal attacks
-        $filename = basename($file);
+        $filename = pp_storage_filename_from_url($file) ?? basename((string) $file);
         $full_path = $upload_directory . $filename;
     
         // Check if the file exists
@@ -3028,8 +3124,8 @@
 
                     if (!empty($step['action']['type']) && $step['action']['type'] === 'image') {
                         if (!empty($step['action']['value'])) {
-                            $pp_qr_src = (string) $step['action']['value'];
-                            $pp_has_qr = true;
+                            $pp_qr_src = pp_resolve_media_url((string) $step['action']['value']);
+                            $pp_has_qr = $pp_qr_src !== '';
                         } else {
                             echo '<style>.li-'.$rowli.'{display: none !important;}</style>';
                         }
@@ -3149,6 +3245,10 @@
                             if (e.key === "Escape") {
                                 pp_close_image();
                             }
+                        });
+
+                        document.addEventListener("DOMContentLoaded", function () {
+                            document.body.style.overflow = "";
                         });
                     </script>
                 ';

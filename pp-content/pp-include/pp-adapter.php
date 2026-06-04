@@ -5410,25 +5410,37 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     if($autoExchange == ""){
                         echo json_encode(['status' => "false", 'title' => 'Incomplete Information', 'message' => 'Please fill in all required fields before proceeding.', 'csrf_token' => $new_csrf_token]);
                     }else{
-                        $max_file_size = 2 * 1024 * 1024; 
-                        
-                        $branding_favicon = json_decode(uploadImage($_FILES['favicon']?? null, $max_file_size), true);
-                        if($branding_favicon['status'] == true){
-                            $branding_favicon = $site_url.'pp-media/storage/'.$branding_favicon['file'];
-                            
-                            deleteImage($global_response_brand['response'][0]['favicon']);
-                        }else{
-                            $branding_favicon = $global_response_brand['response'][0]['favicon'];
+                        $max_file_size = 2 * 1024 * 1024;
+
+                        $faviconUpload = pp_process_image_upload(
+                            $_FILES['favicon'] ?? null,
+                            (string) ($global_response_brand['response'][0]['favicon'] ?? ''),
+                            $max_file_size
+                        );
+
+                        if ($faviconUpload['status'] === 'error' && ! empty($_FILES['favicon']['name'] ?? '')) {
+                            echo json_encode(['status' => 'false', 'title' => 'Upload Failed', 'message' => $faviconUpload['message'] ?? 'Favicon upload failed.', 'csrf_token' => $new_csrf_token]);
+                            exit();
                         }
 
-                        $branding_primary_logo = json_decode(uploadImage($_FILES['primary_logo']?? null, $max_file_size), true);
-                        if($branding_primary_logo['status'] == true){
-                            $branding_primary_logo = $site_url.'pp-media/storage/'.$branding_primary_logo['file'];
-                            
-                            deleteImage($global_response_brand['response'][0]['logo']);
-                        }else{
-                            $branding_primary_logo = $global_response_brand['response'][0]['logo'];
+                        $branding_favicon = $faviconUpload['status'] === 'ok'
+                            ? $faviconUpload['url']
+                            : $global_response_brand['response'][0]['favicon'];
+
+                        $logoUpload = pp_process_image_upload(
+                            $_FILES['primary_logo'] ?? null,
+                            (string) ($global_response_brand['response'][0]['logo'] ?? ''),
+                            $max_file_size
+                        );
+
+                        if ($logoUpload['status'] === 'error' && ! empty($_FILES['primary_logo']['name'] ?? '')) {
+                            echo json_encode(['status' => 'false', 'title' => 'Upload Failed', 'message' => $logoUpload['message'] ?? 'Logo upload failed.', 'csrf_token' => $new_csrf_token]);
+                            exit();
                         }
+
+                        $branding_primary_logo = $logoUpload['status'] === 'ok'
+                            ? $logoUpload['url']
+                            : $global_response_brand['response'][0]['logo'];
 
                         if($site_name == "" || $default_timezone == "" || $default_language == "" || $default_currency == "" || $payment_tolerance == ""){
                             echo json_encode(['status' => "false", 'title' => 'Incomplete Information', 'message' => 'Please fill in all required fields before proceeding.', 'csrf_token' => $new_csrf_token]);
@@ -7815,12 +7827,20 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             if($response['status'] == true){
                                 $max_file_size = 2 * 1024 * 1024; 
                                 
-                                $assets_logo = json_decode(uploadImage($_FILES['gateway_logo'] ?? null, $max_file_size), true);
-                                if($assets_logo['status'] == true){
-                                    $logo = $site_url.'pp-media/storage/'.$assets_logo['file'];
-                                }else{
-                                    $logo = $response['response'][0]['logo'];
+                                $logoUpload = pp_process_image_upload(
+                                    $_FILES['gateway_logo'] ?? null,
+                                    (string) ($response['response'][0]['logo'] ?? ''),
+                                    $max_file_size
+                                );
+
+                                if ($logoUpload['status'] === 'error' && ! empty($_FILES['gateway_logo']['name'] ?? '')) {
+                                    echo json_encode(['status' => 'false', 'title' => 'Upload Failed', 'message' => $logoUpload['message'] ?? 'Gateway logo upload failed.', 'csrf_token' => $new_csrf_token]);
+                                    exit();
                                 }
+
+                                $logo = $logoUpload['status'] === 'ok'
+                                    ? $logoUpload['url']
+                                    : $response['response'][0]['logo'];
 
                                 $columns = ['display', 'logo', 'currency', 'min_allow', 'max_allow', 'fixed_discount', 'percentage_discount', 'fixed_charge', 'percentage_charge', 'primary_color', 'text_color', 'btn_color', 'btn_text_color', 'status', 'updated_date'];
                                 $values = [$display_name, $logo, $currency, money_sanitize($min_amount), money_sanitize($max_amount), money_sanitize($fixed_discount), money_sanitize($percentage_discount), money_sanitize($fixed_charge), money_sanitize($percentage_charge), $primary_color, $text_color, $btn_color, $btn_text_color, $status, getCurrentDatetime('Y-m-d H:i:s')];
@@ -7855,14 +7875,33 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                 }
 
                                 foreach ($_FILES as $key => $file) {
-                                    // Skip empty uploads
-                                    if (empty($file['name'])) continue;
+                                    if ($key === 'gateway_logo') {
+                                        continue;
+                                    }
 
-                                    $max_file_size = 5 * 1024 * 1024; 
-                                    
-                                    $mediaUpload = json_decode(uploadImage($_FILES[$key] ?? null, $max_file_size), true);
-                                    if($mediaUpload['status'] == true){
-                                        $configData[$key] = $site_url.'pp-media/storage/'.$mediaUpload['file'];
+                                    if (empty($file['name'])) {
+                                        continue;
+                                    }
+
+                                    $optionUpload = pp_process_image_upload(
+                                        $_FILES[$key] ?? null,
+                                        '',
+                                        5 * 1024 * 1024
+                                    );
+
+                                    if ($optionUpload['status'] === 'error') {
+                                        echo json_encode(['status' => 'false', 'title' => 'Upload Failed', 'message' => $optionUpload['message'] ?? ('Failed to upload '.$key.'.'), 'csrf_token' => $new_csrf_token]);
+                                        exit();
+                                    }
+
+                                    if ($optionUpload['status'] === 'ok') {
+                                        $existingOption = json_decode(getData($db_prefix.'gateways_parameter','WHERE gateway_id = "'.$gateway_id.'" AND brand_id = "'.$global_response_brand['response'][0]['brand_id'].'" AND option_name = "'.$key.'"'), true);
+
+                                        if (($existingOption['status'] ?? false) === true && ! empty($existingOption['response'][0]['value'])) {
+                                            deleteImage((string) $existingOption['response'][0]['value']);
+                                        }
+
+                                        $configData[$key] = $optionUpload['url'];
                                     }
                                 }
 

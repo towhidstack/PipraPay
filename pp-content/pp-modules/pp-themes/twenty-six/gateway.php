@@ -61,7 +61,10 @@
     $pp_discount = (float) ($data['transaction']['discount_amount'] ?? 0);
     $pp_trx_ref = trim((string) ($data['transaction']['ref'] ?? ''));
     $pp_brand_name = trim((string) ($data['brand']['name'] ?? ''));
-    $pp_brand_logo = trim((string) ($data['brand']['favicon'] ?? $data['brand']['logo'] ?? ''));
+    $pp_brand_logo = pp_resolve_media_url(
+        (string) ($data['brand']['favicon'] ?? ''),
+        pp_resolve_media_url((string) ($data['brand']['logo'] ?? ''))
+    );
 
     $pp_theme_accent = trim((string) ($data['options']['primary_color'] ?? '#2563eb'));
 
