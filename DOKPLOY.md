@@ -45,7 +45,10 @@ PORT=8080
 PIPRAPAY_APP_URL=https://pay.taqwamart.bd
 ```
 
-`PIPRAPAY_APP_URL` must use **`https://`**. Without it, assets load as `http://...` and the browser blocks them (Mixed Content) when users visit over HTTPS.
+`PIPRAPAY_APP_URL` must use **`https://`**. Without it:
+
+- CSS/JS load as `http://...` (Mixed Content, blocked by the browser)
+- Admin menu AJAX posts to `http://...` while you are on HTTPS → cookies are not sent → Gateways (and other pages) show `{"status":"false","message":"invalid request"}` and ApexCharts may log `NaN` on the dashboard
 
 ### Web installer (default)
 

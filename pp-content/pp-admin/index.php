@@ -524,6 +524,21 @@
 
     <script src="<?php echo $site_url ?>assets/js/tabler.min.js"></script>
     <script src="<?php echo $site_url ?>assets/js/jquery-3.6.4.min.js"></script>
+    <script data-cfasync="false">
+        (function () {
+            if (window.location.protocol !== 'https:') {
+                return;
+            }
+            if (typeof jQuery === 'undefined') {
+                return;
+            }
+            jQuery.ajaxPrefilter(function (options) {
+                if (typeof options.url === 'string' && options.url.indexOf('http://') === 0) {
+                    options.url = 'https://' + options.url.slice(7);
+                }
+            });
+        })();
+    </script>
     <script src="<?php echo $site_url ?>assets/js/custom-toast.js?v=1.2"></script>
     <script src="<?php echo $site_url ?>assets/js/apexcharts.min.js"></script>
     <script src="<?php echo $site_url ?>assets/js/choices.min.js"></script>
@@ -967,8 +982,11 @@
                 }
             }
 
-            fetch('<?php echo $site_url ?>', {
+            // Same-origin POST so login cookies (Secure) are sent when the page is HTTPS
+            // but $site_url was still generated as http:// behind a reverse proxy.
+            fetch('/', {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
