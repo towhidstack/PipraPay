@@ -14,6 +14,16 @@ if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
     exit 0
 fi
 
+# Do not write pp-config during the web installer (breaks pp-temp-config flow).
+if [ -f /app/pp-temp-config.php ]; then
+    exit 0
+fi
+
+# Auto-write only when explicitly enabled (skip installer) or regenerating.
+if [ "${PIPRAPAY_AUTO_DB_CONFIG:-}" != "1" ] && [ "${PIPRAPAY_REGENERATE_DB_CONFIG:-}" != "1" ]; then
+    exit 0
+fi
+
 if [ -f /app/pp-config.php ] && [ "${PIPRAPAY_REGENERATE_DB_CONFIG:-}" != "1" ]; then
     exit 0
 fi

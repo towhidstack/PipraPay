@@ -121,6 +121,19 @@
         if(file_exists(__DIR__ . '/pp-config.php')){
             if (isset($requriemntnoneedchecked) && $requriemntnoneedchecked === true) {
                 switch ($route) {
+                    case 'install':
+                        if (file_exists(__DIR__ . '/pp-content/pp-install/index.php')) {
+                            require __DIR__ . '/pp-content/pp-install/index.php';
+                        } else {
+                            http_response_code(404);
+                            if (file_exists(__DIR__ . '/pp-404.php')) {
+                                require __DIR__ . '/pp-404.php';
+                            } else {
+                                exit('Direct access not allowed');
+                            }
+                        }
+                        break;
+
                     case '404':
                         if(file_exists(__DIR__ . '/pp-404.php')){
                             http_response_code(404);

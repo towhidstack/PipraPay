@@ -22,12 +22,20 @@
 
 ## Database
 
-Do **not** use `localhost` as DB host. Use the **internal hostname** from the linked MariaDB service, or let Coolify inject `DB_HOST` / `DB_DATABASE` (auto-writes `pp-config.php` on start).
+Do **not** use `localhost` as DB host in the installer. Use the **internal hostname** from the linked MariaDB service (e.g. the Coolify service name).
+
+`pp-config.php` is **not** auto-written on container start anymore (that broke the installer). After install, or to skip the wizard, set:
+
+```env
+PIPRAPAY_AUTO_DB_CONFIG=1
+```
+
+and link MariaDB (`DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
 
 To re-run the web installer:
 
 ```bash
-rm -f /app/pp-config.php
+rm -f /app/pp-config.php /app/pp-temp-config.php
 ```
 
 ## Imagick

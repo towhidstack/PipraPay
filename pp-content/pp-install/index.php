@@ -4,6 +4,29 @@
         exit('Direct access not allowed');
     }
 
+    if (!defined('PIPRAPAY_INSTALL_REQUEST')) {
+        define('PIPRAPAY_INSTALL_REQUEST', true);
+    }
+
+    function piprapay_install_load_temp_config(): bool {
+        $tempFile = __DIR__ . '/../../pp-temp-config.php';
+        if (!is_readable($tempFile)) {
+            return false;
+        }
+        require $tempFile;
+        return isset($db_host, $db_user, $db_name, $db_prefix);
+    }
+
+    function piprapay_install_json_error(string $message, string $title = 'Installation Error'): void {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'status'  => 'false',
+            'title'   => $title,
+            'message' => $message,
+        ]);
+        exit;
+    }
+
     if(isset($_POST['test_databse_request'])){
         $host        = $_POST['dbHost'] ?? '';
         $port        = $_POST['dbPort'] ?? '3306';
@@ -74,7 +97,10 @@
     \$db_prefix = '".addslashes($tablePrefix)."';
 ?>";
 
-            file_put_contents(__DIR__ . '/../../pp-temp-config.php', $configContent);
+            $tempPath = __DIR__ . '/../../pp-temp-config.php';
+            if (file_put_contents($tempPath, $configContent) === false) {
+                throw new Exception('Could not save database config on the server. Check that /app is writable.');
+            }
 
             echo json_encode(['status' => 'true', 'title' => 'Imported successfully', 'message' => 'Database connection verified and imported successfully.']);
         } catch (Throwable $e) {
@@ -89,6 +115,8 @@
 
         
     if(isset($_POST['adminName'])){
+        header('Content-Type: application/json; charset=utf-8');
+
         $adminName = $_POST['adminName'];
         $adminEmail = $_POST['adminEmail'];
         $adminUsername = $_POST['adminUsername'];
@@ -96,77 +124,86 @@
         $confirmPassword = $_POST['confirmPassword'];
 
         if($requriemntnoneedchecked == false){
-            echo json_encode([
-                'status'  => 'false',
-                'title'   => 'Server Requirements Not Met',
-                'message' => 'Your server does not meet the minimum requirements. Please enable the required PHP extensions and try again.'
-            ]);
-            exit;
+            piprapay_install_json_error(
+                'Your server does not meet the minimum requirements. Please enable the required PHP extensions and try again.',
+                'Server Requirements Not Met'
+            );
         }
 
         if($adminName == "" || $adminEmail == "" || $adminUsername == "" || $adminPassword == "" || $confirmPassword == ""){
-            echo json_encode(['status' => "false", 'message' => 'Enter all info before process.']);
-        }else{
-            if($adminPassword == $confirmPassword){
-                if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-                    $new_temp_password = generateStrongPassword(8);
+            piprapay_install_json_error('Enter all info before process.');
+        }
 
-                    $hashedPass = password_hash($adminPassword, PASSWORD_BCRYPT);
-                    $temp_password = password_hash($new_temp_password, PASSWORD_BCRYPT);
+        if($adminPassword != $confirmPassword){
+            piprapay_install_json_error('Password and Confirm Password must be the same.');
+        }
 
-                    $a_id = generateItemID();
-                    $brand_id = generateItemID();
+        if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+            piprapay_install_json_error('Invalid email address.');
+        }
 
-                    $columns = ['a_id', 'full_name', 'username', 'email', 'password', 'temp_password', 'created_date', 'updated_date'];
-                    $values = [$a_id, $adminName, $adminUsername, $adminEmail, $hashedPass, $temp_password, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+        if (!piprapay_install_load_temp_config()) {
+            piprapay_install_json_error(
+                'Database setup was not completed. Go back to step 2, run Check & Import, then try again.'
+            );
+        }
 
-                    insertData($db_prefix.'admin', $columns, $values);
+        try {
+            $new_temp_password = generateStrongPassword(8);
 
-                    $columns = ['brand_id', 'a_id', 'permission', 'created_date', 'updated_date'];
-                    $values = [$brand_id, $a_id, json_encode(permissionSchema()), getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+            $hashedPass = password_hash($adminPassword, PASSWORD_BCRYPT);
+            $temp_password = password_hash($new_temp_password, PASSWORD_BCRYPT);
 
-                    insertData($db_prefix.'permission', $columns, $values);
+            $a_id = generateItemID();
+            $brand_id = generateItemID();
 
-                    $columns = ['brand_id', 'created_date', 'updated_date'];
-                    $values = [$brand_id, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+            $columns = ['a_id', 'full_name', 'username', 'email', 'password', 'temp_password', 'created_date', 'updated_date'];
+            $values = [$a_id, $adminName, $adminUsername, $adminEmail, $hashedPass, $temp_password, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
-                    insertData($db_prefix.'brands', $columns, $values);
-
-                    $columns = ['brand_id', 'code', 'symbol', 'created_date', 'updated_date'];
-                    $values = [$brand_id, 'BDT', '৳', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
-
-                    insertData($db_prefix.'currency', $columns, $values);
-
-                    $tempFile  = __DIR__ . '/../../pp-temp-config.php';
-                    $finalFile = __DIR__ . '/../../pp-config.php';
-
-                    if (!file_exists($tempFile)) {
-                        echo json_encode(['status' => 'false', 'message' => 'Temp config file not found.']);
-                        exit;
-                    }
-
-                    // Read temp content
-                    $configContent = file_get_contents($tempFile);
-                    if ($configContent === false) {
-                        echo json_encode(['status' => 'false', 'message' => 'Failed to read temp config file.']);
-                        exit;
-                    }
-
-                    // Write final config
-                    if (file_put_contents($finalFile, $configContent) === false) {
-                        echo json_encode(['status' => 'false', 'message' => 'Failed to create final config file.']);
-                        exit;
-                    }
-
-                    unlink($tempFile);
-
-                    echo json_encode(['status' => "true", 'message' => 'Install Completed.']);
-                }else{
-                    echo json_encode(['status' => "false", 'message' => 'Invalid email address.']);
-                }
-            }else{
-                echo json_encode(['status' => "false", 'message' => 'Password and Confirm Password must be the same.']);
+            if (!insertData($db_prefix.'admin', $columns, $values)) {
+                piprapay_install_json_error(
+                    'Could not create the admin account. The database may already have an admin from a previous attempt — remove pp-config.php, re-import on step 2, or log in if the account exists.'
+                );
             }
+
+            $columns = ['brand_id', 'a_id', 'permission', 'created_date', 'updated_date'];
+            $values = [$brand_id, $a_id, json_encode(permissionSchema()), getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+
+            if (!insertData($db_prefix.'permission', $columns, $values)) {
+                piprapay_install_json_error('Could not save admin permissions.');
+            }
+
+            $columns = ['brand_id', 'created_date', 'updated_date'];
+            $values = [$brand_id, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+
+            if (!insertData($db_prefix.'brands', $columns, $values)) {
+                piprapay_install_json_error('Could not create default brand.');
+            }
+
+            $columns = ['brand_id', 'code', 'symbol', 'created_date', 'updated_date'];
+            $values = [$brand_id, 'BDT', '৳', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+
+            if (!insertData($db_prefix.'currency', $columns, $values)) {
+                piprapay_install_json_error('Could not create default currency.');
+            }
+
+            $tempFile  = __DIR__ . '/../../pp-temp-config.php';
+            $finalFile = __DIR__ . '/../../pp-config.php';
+
+            $configContent = file_get_contents($tempFile);
+            if ($configContent === false) {
+                piprapay_install_json_error('Failed to read temp config file.');
+            }
+
+            if (file_put_contents($finalFile, $configContent) === false) {
+                piprapay_install_json_error('Failed to create final config file. Ensure /app is writable by PHP.');
+            }
+
+            @unlink($tempFile);
+
+            echo json_encode(['status' => 'true', 'message' => 'Install Completed.']);
+        } catch (Throwable $e) {
+            piprapay_install_json_error($e->getMessage());
         }
 
         exit();
@@ -332,7 +369,7 @@
                                     <label for="dbHost" class="form-label">Database Host</label>
                                     <div class="form-control-wrap">
                                         <input type="text" class="form-control" id="dbHost" 
-                                                placeholder="localhost" value="localhost" required>
+                                                placeholder="MariaDB internal hostname (not localhost)" value="" required>
                                     </div>
                                 </div>
                             </div>
@@ -721,12 +758,29 @@
                             });
                         }
                     },
-                    error: function (xhr, status, error) {
+                    error: function (xhr) {
+                        document.querySelector("#btnCompleteInstall").innerHTML = btn;
+
+                        var description = 'Something went wrong.';
+                        if (xhr.responseText) {
+                            try {
+                                var parsed = JSON.parse(xhr.responseText);
+                                if (parsed.message) {
+                                    description = parsed.message;
+                                }
+                            } catch (e) {
+                                var plain = xhr.responseText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                                if (plain.length > 0 && plain.length < 500) {
+                                    description = plain;
+                                }
+                            }
+                        }
+
                         createToast({
                             title: 'Action Required',
-                            description: 'Something went wrong.',
+                            description: description,
                             svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
-                            timeout: 6000,
+                            timeout: 8000,
                             top: 20
                         });
                     }

@@ -96,7 +96,11 @@
 
             return $pdo;
         } catch (PDOException $e) {
-            die('Database connection failed: ' . $e->getMessage());
+            $message = 'Database connection failed: ' . $e->getMessage();
+            if (defined('PIPRAPAY_INSTALL_REQUEST') && PIPRAPAY_INSTALL_REQUEST === true) {
+                throw new RuntimeException($message);
+            }
+            die($message);
         }
     }
 
