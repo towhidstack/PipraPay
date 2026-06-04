@@ -378,11 +378,9 @@
                             exit;
                         }
 
-                        $rawInput = file_get_contents("php://input");
+                        $data = piprapay_parse_api_json_body();
 
-                        $data = json_decode($rawInput, true);
-
-                        if (!$data) {
+                        if ($data === null) {
                             http_response_code(400);
                             echo json_encode([
                                 'error' => [

@@ -250,6 +250,34 @@
         return null;
     }
 
+    /**
+     * Parse merchant API JSON body. Empty body is allowed (e.g. gateways/list).
+     * Note: json_decode('{}') and '[]' are empty arrays — must not use if (!$data).
+     *
+     * @return array<string, mixed>|null null when JSON is malformed
+     */
+    function piprapay_parse_api_json_body(): ?array
+    {
+        $rawInput = file_get_contents('php://input');
+        $rawInput = is_string($rawInput) ? trim($rawInput) : '';
+
+        if ($rawInput === '') {
+            return [];
+        }
+
+        $data = json_decode($rawInput, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+
+        if (! is_array($data)) {
+            return null;
+        }
+
+        return $data;
+    }
+
     function connectDatabase() {
         global $db_host, $db_port, $db_user, $db_pass, $db_name;
         $db_port = $db_port ?? 3306; // fallback
