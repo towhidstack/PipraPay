@@ -1,0 +1,27 @@
+# Coolify default build: Nixpacks (auto-detects PHP via index.php).
+# Imagick + PHP 8.3 are installed here. Link MariaDB in Coolify and set DB_* env vars.
+
+[variables]
+NIXPACKS_PHP_VERSION = "8.3"
+NIXPACKS_PHP_ROOT_DIR = "/app"
+UPLOAD_MAX_FILESIZE = "100M"
+POST_MAX_SIZE = "100M"
+
+[phases.setup]
+nixPkgs = ["...", "php83Extensions.imagick", "imagemagick"]
+
+[phases.install]
+cmds = [
+    "composer install --no-dev --no-interaction --no-scripts --prefer-dist || true",
+    "mkdir -p pp-media/storage",
+    "chmod +x docker/coolify-start.sh docker/write-pp-config-from-env.sh || true",
+]
+
+[phases.build]
+cmds = [
+    "php -m | grep -i imagick",
+    "php -r 'if (!extension_loaded(\"imagick\")) { fwrite(STDERR, \"imagick missing\\n\"); exit(1); }'",
+]
+
+[start]
+cmd = "bash /app/docker/coolify-start.sh"

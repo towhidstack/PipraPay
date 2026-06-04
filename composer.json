@@ -1,0 +1,19 @@
+{
+    "name": "piprapay/app",
+    "description": "PHP platform requirements for Coolify/Nixpacks builds",
+    "type": "project",
+    "require": {
+        "php": "^8.3",
+        "ext-bcmath": "*",
+        "ext-curl": "*",
+        "ext-fileinfo": "*",
+        "ext-gd": "*",
+        "ext-imagick": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*",
+        "ext-tokenizer": "*",
+        "ext-zip": "*"
+    }
+}

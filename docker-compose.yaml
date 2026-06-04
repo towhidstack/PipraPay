@@ -1,0 +1,15 @@
+services:
+  piprapay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+    volumes:
+      - piprapay-media:/app/pp-media/storage
+
+volumes:
+  piprapay-media:
