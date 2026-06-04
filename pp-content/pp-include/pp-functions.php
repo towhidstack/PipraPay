@@ -1753,15 +1753,33 @@
         ];
     }
 
+    function pp_storage_directory(): string
+    {
+        $dir = dirname(__DIR__, 2).'/pp-media/storage';
+
+        if (! is_dir($dir) && ! @mkdir($dir, 0775, true)) {
+            return rtrim($dir, '/').'/';
+        }
+
+        if (is_dir($dir) && ! is_writable($dir)) {
+            @chmod($dir, 0775);
+        }
+
+        return rtrim($dir, '/').'/';
+    }
+
     function uploadImage($file, $max_file_size) {
-        if (!is_dir(__DIR__.'/../../pp-media/storage')) {
-            if (mkdir(__DIR__.'/../../pp-media/storage', 0755, true)) {
-                $upload_directory = __DIR__ . '/../../pp-media/storage/';
-            } else {
-                return json_encode(['status' => false, 'message' => 'Failed to create folder!']);
-            }
-        }else{
-            $upload_directory = __DIR__ . '/../../pp-media/storage/';
+        $upload_directory = pp_storage_directory();
+
+        if (! is_dir($upload_directory)) {
+            return json_encode(['status' => false, 'message' => 'Failed to create storage folder (pp-media/storage).']);
+        }
+
+        if (! is_writable($upload_directory)) {
+            return json_encode([
+                'status' => false,
+                'message' => 'Storage folder is not writable. On the server run: chown -R www-data:www-data /app/pp-media/storage && chmod 775 /app/pp-media/storage',
+            ]);
         }
 
         if (! is_array($file) || ! isset($file['error'])) {
@@ -1772,77 +1790,81 @@
             return json_encode(['status' => 'skip', 'message' => 'No file uploaded.']);
         }
 
-        // ─────────── VALIDATION ───────────
         if ($file['error'] !== UPLOAD_ERR_OK) {
             return json_encode(['status' => false, 'message' => 'Upload failed (error code '.$file['error'].').']);
         }
-    
+
         if ($file['size'] > $max_file_size) {
             return json_encode(['status' => false, 'message' => 'File size exceeds maximum allowed.']);
         }
-    
+
         $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        $file_info          = pathinfo($file['name']);
-        $file_extension     = strtolower($file_info['extension']);
-    
-        if (!in_array($file_extension, $allowed_extensions)) {
+        $file_info = pathinfo($file['name']);
+        $file_extension = strtolower($file_info['extension'] ?? '');
+
+        if (! in_array($file_extension, $allowed_extensions, true)) {
             return json_encode(['status' => false, 'message' => 'Only JPG, PNG, GIF, and WEBP files are allowed.']);
         }
-    
-        // ─────────── FILE NAME ───────────
+
         $random_filename = generateRandomFilename($file_extension);
-        $full_path       = $upload_directory . $random_filename;
-    
-        // ─────────── TRY IMAGICK ───────────
-        try {
-            if (!extension_loaded('imagick')) {
-                throw new Exception('Imagick extension not installed.');
-            }
-    
-            $img = new Imagick($file['tmp_name']);
-    
-            $hasAlpha = $img->getImageAlphaChannel();
-    
-            if ($hasAlpha && Imagick::queryFormats('WEBP')) {
-                $img->setImageFormat('webp');
-                $img->setOption('webp:lossless', 'true');
-                $img->setImageCompressionQuality(85);
-                $random_filename = generateRandomFilename('webp');
-            } elseif (!$hasAlpha && Imagick::queryFormats('JPEG')) {
-                $img->setImageFormat('jpeg');
-                $img->setImageCompression(Imagick::COMPRESSION_JPEG);
-                $img->setImageCompressionQuality(75);
-                $random_filename = generateRandomFilename('jpg');
-            } else {
-                throw new Exception('Required format not supported by Imagick.');
-            }
-    
-            $full_path = $upload_directory . $random_filename;
-    
-            $img->stripImage();
-            $img->writeImage($full_path);
-            $img->clear();
-            $img->destroy();
-    
+        $full_path = $upload_directory.$random_filename;
+
+        // Direct upload first — works without Imagick and avoids tmp file issues after Imagick fails.
+        if (is_uploaded_file($file['tmp_name']) && move_uploaded_file($file['tmp_name'], $full_path)) {
+            @chmod($full_path, 0644);
+
             return json_encode(['status' => true, 'file' => $random_filename]);
-    
-        } catch (Exception $e) {
-            // ───── FALLBACK: MOVE FILE DIRECTLY ─────
-            if (move_uploaded_file($file['tmp_name'], $full_path)) {
-                return json_encode([
-                    'status' => true,
-                    'file'   => $random_filename,
-                    'note'   => 'Imagick not used. File uploaded without processing.'
-                ]);
-            } else {
-                return json_encode(['status' => false, 'message' => 'File upload failed without Imagick: ' . $e->getMessage()]);
+        }
+
+        if (! is_uploaded_file($file['tmp_name']) || ! is_readable($file['tmp_name'])) {
+            return json_encode(['status' => false, 'message' => 'Upload temp file is missing or not readable.']);
+        }
+
+        // Optional Imagick pass (compression) when direct move failed but tmp still exists.
+        if (extension_loaded('imagick')) {
+            try {
+                $img = new Imagick($file['tmp_name']);
+                $hasAlpha = $img->getImageAlphaChannel();
+
+                if ($hasAlpha && Imagick::queryFormats('WEBP')) {
+                    $img->setImageFormat('webp');
+                    $img->setOption('webp:lossless', 'true');
+                    $img->setImageCompressionQuality(85);
+                    $random_filename = generateRandomFilename('webp');
+                } elseif (! $hasAlpha && Imagick::queryFormats('JPEG')) {
+                    $img->setImageFormat('jpeg');
+                    $img->setImageCompression(Imagick::COMPRESSION_JPEG);
+                    $img->setImageCompressionQuality(75);
+                    $random_filename = generateRandomFilename('jpg');
+                }
+
+                $full_path = $upload_directory.$random_filename;
+                $img->stripImage();
+                $img->writeImage($full_path);
+                $img->clear();
+                $img->destroy();
+                @chmod($full_path, 0644);
+
+                return json_encode(['status' => true, 'file' => $random_filename]);
+            } catch (Exception $e) {
+                // Fall through to copy() if Imagick cannot write.
             }
         }
+
+        if (@copy($file['tmp_name'], $full_path)) {
+            @chmod($full_path, 0644);
+
+            return json_encode(['status' => true, 'file' => $random_filename]);
+        }
+
+        return json_encode([
+            'status' => false,
+            'message' => 'Could not save file to pp-media/storage. Check folder ownership (www-data) and volume mount permissions.',
+        ]);
     }
     
     function deleteImage($file) {
-        // Define the local image directory path
-        $upload_directory = __DIR__ . '/../../pp-media/storage/'; // Update path if different
+        $upload_directory = pp_storage_directory();
     
         // Sanitize the filename to prevent directory traversal attacks
         $filename = pp_storage_filename_from_url($file) ?? basename((string) $file);
