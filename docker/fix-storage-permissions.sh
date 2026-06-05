@@ -4,14 +4,28 @@
 
 set +e
 
+# shellcheck source=/app/docker/detect-php-user.sh
+source /app/docker/detect-php-user.sh
+
 STORAGE_DIR="${PIPRAPAY_STORAGE_PATH:-/app/pp-media/storage}"
 MEDIA_DIR="$(dirname "$STORAGE_DIR")"
 MARKER_FILE="${STORAGE_DIR}/.piprapay-perms-ok"
+PHP_USER="$(detect_php_user)"
+PHP_GROUP="$PHP_USER"
+
+if ! id "$PHP_USER" >/dev/null 2>&1; then
+    PHP_USER="nobody"
+    PHP_GROUP="nogroup"
+fi
+
+if ! getent group "$PHP_GROUP" >/dev/null 2>&1; then
+    PHP_GROUP="$PHP_USER"
+fi
 
 mkdir -p "$STORAGE_DIR"
 
 php_fpm_users() {
-    local users="nobody www-data nginx"
+    local users="${PHP_USER} nobody www-data nginx"
     local conf
 
     for conf in /usr/local/etc/php-fpm.d/zz-www.conf /assets/php-fpm.conf /etc/php*/fpm/pool.d/www.conf; do
@@ -44,15 +58,10 @@ if command -v stat >/dev/null 2>&1; then
         || true
 fi
 
-chmod 777 "$MEDIA_DIR" 2>/dev/null || true
+chmod 755 "$MEDIA_DIR" 2>/dev/null || true
+chown "${PHP_USER}:${PHP_GROUP}" "$STORAGE_DIR" 2>/dev/null || true
 
-if chown -R www-data:www-data "$MEDIA_DIR" 2>/dev/null; then
-    echo "[piprapay] chown www-data on ${MEDIA_DIR} OK"
-else
-    echo "[piprapay] WARN: chown www-data failed on ${MEDIA_DIR} (common on bind mounts / NFS)" >&2
-fi
-
-if chmod -R 777 "$STORAGE_DIR"; then
+if chmod 777 "$STORAGE_DIR"; then
     echo "[piprapay] chmod 777 on ${STORAGE_DIR} OK"
 else
     echo "[piprapay] ERROR: chmod failed on ${STORAGE_DIR}" >&2
@@ -60,15 +69,16 @@ else
     exit 1
 fi
 
+find "$STORAGE_DIR" -type d -exec chmod 777 {} \; 2>/dev/null || true
+find "$STORAGE_DIR" -type f -exec chmod 644 {} \; 2>/dev/null || true
+
 WRITE_OK=0
-PHP_USER="unknown"
 
 while IFS= read -r user; do
     [ -n "$user" ] || continue
     if can_write_as "$user"; then
         echo "[piprapay] storage writable by ${user} OK (${STORAGE_DIR})"
         WRITE_OK=1
-        PHP_USER="$user"
         break
     fi
 done < <(php_fpm_users)

@@ -7,6 +7,14 @@ server {
 
     client_max_body_size 100m;
 
+    location ^~ /pp-media/storage/ {
+        root /app;
+        expires 7d;
+        add_header Cache-Control "public";
+        try_files $uri =404;
+        access_log off;
+    }
+
     location / {
         try_files $uri $uri/ @piprapay;
     }

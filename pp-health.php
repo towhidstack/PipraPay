@@ -60,6 +60,16 @@ $bootstrapOk = is_file($bootstrapMarker);
 $configPath = __DIR__ . '/pp-config.php';
 $configReadable = is_file($configPath) && is_readable($configPath);
 
+$storageFileCount = 0;
+if (is_dir($storageReal)) {
+    $storageFileCount = count(array_filter(
+        scandir($storageReal) ?: [],
+        static fn (string $entry): bool => ! in_array($entry, ['.', '..'], true)
+            && is_file(rtrim($storageReal, '/') . '/' . $entry)
+            && ! str_starts_with($entry, '.')
+    ));
+}
+
 echo json_encode([
     'ok' => extension_loaded('imagick') && $storageProbe && ($configReadable || $dbOk === null),
     'build' => $buildVersion,
@@ -76,6 +86,7 @@ echo json_encode([
     'storage_writable_probe' => $storageProbe,
     'storage_is_writable_flag' => is_dir($storageReal) ? is_writable($storageReal) : false,
     'pp_config_readable' => $configReadable,
+    'storage_file_count' => $storageFileCount,
     'hint' => ! $configReadable && is_file($configPath)
         ? 'pp-config.php exists but PHP cannot read it (wrong owner after bootstrap). Redeploy latest PipraPay or: chown nobody:nogroup /app/pp-config.php'
         : ($storageProbe ? null : (

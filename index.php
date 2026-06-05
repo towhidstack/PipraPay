@@ -88,6 +88,8 @@
     $page = $_GET['page'] ?? '';
     $page = trim($page, '/');
 
+    pp_try_serve_storage_request($page);
+
     /*
     |--------------------------------------------------------------------------
     | SECURITY: Prevent traversal & illegal chars

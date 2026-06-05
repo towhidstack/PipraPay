@@ -156,6 +156,14 @@ chmod 640 /app/pp-config.php
 
 Then reload the site. Push latest `main` and **Redeploy** so `secure-pp-config.sh` applies this automatically on every start.
 
+### Images upload but show broken (GET returns ~50 bytes)
+
+Logs may show `GET /pp-media/storage/foo.png 200 50` — the file is **missing on disk** or nginx fell through to PHP, which used to reject `.png` in the router.
+
+Check `https://pay.taqwamart.bd/pp-health.php` → `storage_file_count`. If **0**, the volume is empty; **re-upload** logos/QR in Brand Settings after the volume is mounted.
+
+After latest deploy, storage URLs are served directly by nginx (or PHP fallback). Re-upload once if old filenames only exist in the database.
+
 **If logs still show ERROR**
 
 - Switch from host bind mount to a **named volume**.

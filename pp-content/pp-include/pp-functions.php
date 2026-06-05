@@ -1773,6 +1773,43 @@
         return rtrim($dir, '/').'/';
     }
 
+    function pp_try_serve_storage_request(string $page): void
+    {
+        if (! preg_match('#^pp-media/storage/([a-zA-Z0-9._-]+)$#', $page, $matches)) {
+            return;
+        }
+
+        $filename = basename($matches[1]);
+        $path = pp_storage_directory().$filename;
+
+        if (! is_file($path) || ! is_readable($path)) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'File not found';
+
+            exit;
+        }
+
+        $mime = mime_content_type($path);
+        if (! is_string($mime) || $mime === '') {
+            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            $mime = match ($ext) {
+                'png' => 'image/png',
+                'jpg', 'jpeg' => 'image/jpeg',
+                'gif' => 'image/gif',
+                'webp' => 'image/webp',
+                default => 'application/octet-stream',
+            };
+        }
+
+        header('Content-Type: '.$mime);
+        header('Content-Length: '.(string) filesize($path));
+        header('Cache-Control: public, max-age=604800');
+        readfile($path);
+
+        exit;
+    }
+
     function pp_storage_can_write(string $directory): bool
     {
         $directory = rtrim($directory, '/').'/';
@@ -1866,7 +1903,7 @@
 
         // Direct upload first — works without Imagick and avoids tmp file issues after Imagick fails.
         if (is_uploaded_file($file['tmp_name']) && move_uploaded_file($file['tmp_name'], $full_path)) {
-            @chmod($full_path, 0644);
+            @chmod($full_path, 0664);
 
             return json_encode(['status' => true, 'file' => $random_filename]);
         }
@@ -1898,7 +1935,7 @@
                 $img->writeImage($full_path);
                 $img->clear();
                 $img->destroy();
-                @chmod($full_path, 0644);
+                @chmod($full_path, 0664);
 
                 return json_encode(['status' => true, 'file' => $random_filename]);
             } catch (Exception $e) {
@@ -1907,7 +1944,7 @@
         }
 
         if (@copy($file['tmp_name'], $full_path)) {
-            @chmod($full_path, 0644);
+            @chmod($full_path, 0664);
 
             return json_encode(['status' => true, 'file' => $random_filename]);
         }
