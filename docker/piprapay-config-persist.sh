@@ -12,7 +12,9 @@ piprapay_restore_config() {
     fi
     cp "$PIPRAPAY_STORED_CONFIG" /app/pp-config.php
     bash /app/docker/secure-pp-config.sh /app/pp-config.php 2>/dev/null || true
-    echo "[piprapay] pp-config.php restored from volume (${PIPRAPAY_STORED_CONFIG})"
+    if [ "${PIPRAPAY_BOOTSTRAP_VERBOSE:-0}" = "1" ]; then
+        echo "[piprapay] pp-config.php restored from volume (${PIPRAPAY_STORED_CONFIG})"
+    fi
 }
 
 piprapay_persist_config() {

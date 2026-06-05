@@ -6,7 +6,9 @@ define('PipraPay_INIT', true);
 require __DIR__ . '/../pp-content/pp-include/pp-functions.php';
 
 if (piprapay_bootstrap_config_from_env()) {
-    fwrite(STDOUT, "[piprapay] pp-config.php ready (env or volume)\n");
+    if (getenv('PIPRAPAY_BOOTSTRAP_VERBOSE') === '1') {
+        fwrite(STDOUT, "[piprapay] pp-config.php ready (env or volume)\n");
+    }
     exit(0);
 }
 

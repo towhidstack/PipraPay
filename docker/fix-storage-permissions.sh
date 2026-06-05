@@ -4,6 +4,8 @@
 
 set +e
 
+# shellcheck source=/app/docker/bootstrap-log.sh
+source /app/docker/bootstrap-log.sh
 # shellcheck source=/app/docker/detect-php-user.sh
 source /app/docker/detect-php-user.sh
 
@@ -51,8 +53,8 @@ can_write_as() {
     return 1
 }
 
-echo "[piprapay] storage path: ${STORAGE_DIR}"
-if command -v stat >/dev/null 2>&1; then
+piprapay_log "[piprapay] storage path: ${STORAGE_DIR}"
+if piprapay_verbose && command -v stat >/dev/null 2>&1; then
     stat -c '[piprapay] storage mode=%a owner=%U:%G' "$STORAGE_DIR" 2>/dev/null \
         || stat -f '[piprapay] storage mode=%OLp owner=%Su:%Sg' "$STORAGE_DIR" 2>/dev/null \
         || true
@@ -62,9 +64,9 @@ chmod 755 "$MEDIA_DIR" 2>/dev/null || true
 chown "${PHP_USER}:${PHP_GROUP}" "$STORAGE_DIR" 2>/dev/null || true
 
 if chmod 777 "$STORAGE_DIR"; then
-    echo "[piprapay] chmod 777 on ${STORAGE_DIR} OK"
+    piprapay_log "[piprapay] chmod 777 on ${STORAGE_DIR} OK"
 else
-    echo "[piprapay] ERROR: chmod failed on ${STORAGE_DIR}" >&2
+    piprapay_warn "[piprapay] ERROR: chmod failed on ${STORAGE_DIR}"
     ls -lan "$MEDIA_DIR" >&2 || true
     exit 1
 fi
@@ -77,7 +79,7 @@ WRITE_OK=0
 while IFS= read -r user; do
     [ -n "$user" ] || continue
     if can_write_as "$user"; then
-        echo "[piprapay] storage writable by ${user} OK (${STORAGE_DIR})"
+        piprapay_log "[piprapay] storage writable by ${user} OK (${STORAGE_DIR})"
         WRITE_OK=1
         break
     fi
@@ -88,9 +90,9 @@ if [ "$WRITE_OK" -eq 1 ]; then
     exit 0
 fi
 
-echo "[piprapay] ERROR: no PHP user could write to ${STORAGE_DIR}" >&2
-echo "[piprapay] Fix: Dokploy → Volumes → mount a NAMED volume at /app/pp-media/storage (see DOKPLOY.md §4)" >&2
-echo "[piprapay] Prefer Build type: Dockerfile (not Nixpacks) — Port 8080" >&2
+piprapay_warn "[piprapay] ERROR: no PHP user could write to ${STORAGE_DIR}"
+piprapay_warn "[piprapay] Fix: Dokploy → Volumes → mount a NAMED volume at /app/pp-media/storage (see DOKPLOY.md §4)"
+piprapay_warn "[piprapay] Prefer Build type: Dockerfile (not Nixpacks) — Port 8080"
 ls -lan "$MEDIA_DIR" >&2 || true
 ls -lan "$STORAGE_DIR" >&2 || true
 exit 1

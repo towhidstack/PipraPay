@@ -3,6 +3,9 @@
 
 set -e
 
+# shellcheck source=/app/docker/bootstrap-log.sh
+source /app/docker/bootstrap-log.sh
+
 mkdir -p /app/pp-media/storage
 
 # shellcheck source=/app/docker/piprapay-config-persist.sh
@@ -12,8 +15,10 @@ piprapay_restore_config
 bash /app/docker/write-pp-config-from-env.sh || true
 piprapay_persist_config
 
+STORAGE_OK=1
 bash /app/docker/fix-storage-permissions.sh || {
-    echo "[piprapay] WARN: upload directory fix failed — logo/QR uploads may fail until volume is fixed" >&2
+    STORAGE_OK=0
+    piprapay_warn "[piprapay] WARN: upload directory fix failed — logo/QR uploads may fail until volume is fixed"
 }
 
 bash /app/docker/secure-pp-config.sh /app/pp-config.php || true
@@ -31,8 +36,17 @@ elif [ -f /assets/scripts/prestart.mjs ]; then
     RUNTIME="nixpacks"
 fi
 
-echo "[piprapay] build=${BUILD_VERSION} php=$(php -r 'echo PHP_VERSION;') imagick=${IMAGICK_STATUS} runtime=${RUNTIME}"
+CONFIG_OK=0
+if [ -f /app/pp-config.php ] && [ -r /app/pp-config.php ]; then
+    CONFIG_OK=1
+fi
+
+if piprapay_verbose; then
+    echo "[piprapay] build=${BUILD_VERSION} php=$(php -r 'echo PHP_VERSION;') imagick=${IMAGICK_STATUS} runtime=${RUNTIME}"
+else
+    echo "[piprapay] ready build=${BUILD_VERSION} storage=$([ "$STORAGE_OK" -eq 1 ] && echo ok || echo fail) config=$([ "$CONFIG_OK" -eq 1 ] && echo ok || echo missing) imagick=${IMAGICK_STATUS} runtime=${RUNTIME}"
+fi
 
 if [ "$IMAGICK_STATUS" != "enabled" ]; then
-    echo "[piprapay] WARN: imagick extension is not loaded — uploads will use direct file copy" >&2
+    piprapay_warn "[piprapay] WARN: imagick extension is not loaded — uploads will use direct file copy"
 fi

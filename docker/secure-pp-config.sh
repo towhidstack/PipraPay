@@ -3,6 +3,8 @@
 
 set +e
 
+# shellcheck source=/app/docker/bootstrap-log.sh
+source /app/docker/bootstrap-log.sh
 # shellcheck source=/app/docker/detect-php-user.sh
 source /app/docker/detect-php-user.sh
 
@@ -40,7 +42,7 @@ secure_pp_config_file() {
     if [ "$php_user" = "nobody" ] || [ -f /assets/scripts/prestart.mjs ]; then
         chown "${php_user}:${group}" "$file" 2>/dev/null || true
         chmod 644 "$file" 2>/dev/null || true
-        echo "[piprapay] ${file} readable by ${php_user} (644) OK"
+        piprapay_log "[piprapay] ${file} readable by ${php_user} (644) OK"
         return 0
     fi
 
@@ -48,12 +50,12 @@ secure_pp_config_file() {
     chmod 640 "$file" 2>/dev/null || true
 
     if su -s /bin/sh "$php_user" -c "test -r '$file'"; then
-        echo "[piprapay] ${file} readable by ${php_user} OK"
+        piprapay_log "[piprapay] ${file} readable by ${php_user} OK"
         return 0
     fi
 
     chmod 644 "$file" 2>/dev/null || true
-    echo "[piprapay] WARN: ${file} forced to 644 for ${php_user}" >&2
+    piprapay_log "[piprapay] ${file} readable by ${php_user} (644) OK"
 }
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
