@@ -51,6 +51,8 @@ COPY . .
 RUN mkdir -p pp-media/storage \
     && chmod +x /usr/local/bin/docker-entrypoint.sh \
         docker/bootstrap.sh \
+        docker/detect-php-user.sh \
+        docker/secure-pp-config.sh \
         docker/fix-storage-permissions.sh \
         docker/production-start.sh \
         docker/coolify-start.sh \

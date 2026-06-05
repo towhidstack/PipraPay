@@ -16,12 +16,7 @@ bash /app/docker/fix-storage-permissions.sh || {
     echo "[piprapay] WARN: upload directory fix failed — logo/QR uploads may fail until volume is fixed" >&2
 }
 
-if [ -f /app/pp-config.php ]; then
-    chown www-data:www-data /app/pp-config.php 2>/dev/null \
-        || chown nobody:nogroup /app/pp-config.php 2>/dev/null \
-        || true
-    chmod 640 /app/pp-config.php 2>/dev/null || true
-fi
+bash /app/docker/secure-pp-config.sh /app/pp-config.php || true
 
 BUILD_VERSION="unknown"
 if [ -f /app/BUILD_VERSION ]; then

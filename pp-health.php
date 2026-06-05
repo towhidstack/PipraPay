@@ -57,8 +57,11 @@ if (is_file('/etc/supervisor/conf.d/supervisord.conf')) {
 $bootstrapMarker = rtrim($storageReal, '/') . '/.piprapay-perms-ok';
 $bootstrapOk = is_file($bootstrapMarker);
 
+$configPath = __DIR__ . '/pp-config.php';
+$configReadable = is_file($configPath) && is_readable($configPath);
+
 echo json_encode([
-    'ok' => extension_loaded('imagick') && $storageProbe,
+    'ok' => extension_loaded('imagick') && $storageProbe && ($configReadable || $dbOk === null),
     'build' => $buildVersion,
     'php' => PHP_VERSION,
     'imagick' => extension_loaded('imagick') ? 'enabled' : 'disabled',
@@ -72,9 +75,12 @@ echo json_encode([
     'storage_exists' => is_dir($storageReal),
     'storage_writable_probe' => $storageProbe,
     'storage_is_writable_flag' => is_dir($storageReal) ? is_writable($storageReal) : false,
-    'hint' => $storageProbe ? null : (
-        $phpUser === 'nobody'
-            ? 'Nixpacks detected (php_user=nobody). Mount named volume at /app/pp-media/storage and redeploy; prefer Dockerfile build on Dokploy.'
-            : 'Mount named volume at /app/pp-media/storage and redeploy PipraPay.'
-    ),
+    'pp_config_readable' => $configReadable,
+    'hint' => ! $configReadable && is_file($configPath)
+        ? 'pp-config.php exists but PHP cannot read it (wrong owner after bootstrap). Redeploy latest PipraPay or: chown nobody:nogroup /app/pp-config.php'
+        : ($storageProbe ? null : (
+            $phpUser === 'nobody'
+                ? 'Nixpacks detected (php_user=nobody). Mount named volume at /app/pp-media/storage and redeploy; prefer Dockerfile build on Dokploy.'
+                : 'Mount named volume at /app/pp-media/storage and redeploy PipraPay.'
+        )),
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

@@ -131,10 +131,30 @@ or (Nixpacks):
 ```json
 "storage_writable_probe": true,
 "bootstrap_permissions_ok": true,
+"pp_config_readable": true,
 "php_user": "www-data"
 ```
 
 (`php_user: "nobody"` means you are still on Nixpacks — switch to Dockerfile.)
+
+### HTTP 500 on every page (cron, admin, checkout)
+
+If storage logs show **writable by nobody OK** but the site returns **500** with a tiny response body, `pp-config.php` is often owned by **`www-data`** with mode **640** while Nixpacks PHP runs as **`nobody`** — PHP cannot read DB credentials.
+
+Deploy logs should include:
+
+```text
+[piprapay] /app/pp-config.php readable by nobody OK
+```
+
+**Immediate fix (Terminal, until redeploy):**
+
+```bash
+chown nobody:nogroup /app/pp-config.php
+chmod 640 /app/pp-config.php
+```
+
+Then reload the site. Push latest `main` and **Redeploy** so `secure-pp-config.sh` applies this automatically on every start.
 
 **If logs still show ERROR**
 
