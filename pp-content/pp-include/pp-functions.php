@@ -2395,6 +2395,28 @@
         return pp_site_address().$path_payment.'/'.$paymentID124123412;
     }
 
+    /**
+     * Redirect shoppers back to the merchant site after they cancel payment.
+     *
+     * @param  array<string, mixed>  $transaction
+     */
+    function pp_merchant_cancel_redirect(array $transaction): string
+    {
+        $returnUrl = trim((string) ($transaction['return_url'] ?? ''));
+        $ref = trim((string) ($transaction['ref'] ?? ''));
+
+        if ($returnUrl !== '' && $returnUrl !== '--' && filter_var($returnUrl, FILTER_VALIDATE_URL)) {
+            $separator = str_contains($returnUrl, '?') ? '&' : '?';
+
+            return $returnUrl.$separator.http_build_query([
+                'pp_status' => 'canceled',
+                'transaction_ref' => $ref,
+            ]);
+        }
+
+        return pp_checkout_address();
+    }
+
     function pp_hexToRgba($hex, $opacity = 1) {
         $hex = str_replace('#','',$hex);
         if(strlen($hex) == 3){

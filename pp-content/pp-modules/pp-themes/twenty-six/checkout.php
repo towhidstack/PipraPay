@@ -14,8 +14,9 @@
 
     if (isset($_GET['cancel'])) {
         pp_set_transaction_status($data['transaction']['ref'], 'canceled');
+        $pp_cancel_redirect = pp_merchant_cancel_redirect($data['transaction']);
 ?>
-        <script>location.href = '<?php echo pp_checkout_address(); ?>';</script>
+        <script>location.href = '<?php echo htmlspecialchars($pp_cancel_redirect, ENT_QUOTES); ?>';</script>
 <?php
         exit();
     }
