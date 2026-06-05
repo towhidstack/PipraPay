@@ -6,6 +6,22 @@ set +e
 # shellcheck source=/app/docker/detect-php-user.sh
 source /app/docker/detect-php-user.sh
 
+resolve_php_group() {
+    local user="$1"
+
+    if getent group "$user" >/dev/null 2>&1; then
+        echo "$user"
+        return 0
+    fi
+
+    if getent group nogroup >/dev/null 2>&1; then
+        echo "nogroup"
+        return 0
+    fi
+
+    echo "$user"
+}
+
 secure_pp_config_file() {
     local file="$1"
     local php_user group
@@ -13,19 +29,23 @@ secure_pp_config_file() {
     [ -f "$file" ] || return 0
 
     php_user="$(detect_php_user)"
-    group="$php_user"
 
     if ! id "$php_user" >/dev/null 2>&1; then
         php_user="nobody"
-        group="nogroup"
     fi
 
-    if ! getent group "$group" >/dev/null 2>&1; then
-        group="$php_user"
+    group="$(resolve_php_group "$php_user")"
+
+    # Nixpacks often blocks `su nobody`; mode 644 is fine inside the app container.
+    if [ "$php_user" = "nobody" ] || [ -f /assets/scripts/prestart.mjs ]; then
+        chown "${php_user}:${group}" "$file" 2>/dev/null || true
+        chmod 644 "$file" 2>/dev/null || true
+        echo "[piprapay] ${file} readable by ${php_user} (644) OK"
+        return 0
     fi
 
     chown "${php_user}:${group}" "$file" 2>/dev/null || true
-    chmod 640 "$file" 2>/dev/null || chmod 644 "$file" 2>/dev/null || true
+    chmod 640 "$file" 2>/dev/null || true
 
     if su -s /bin/sh "$php_user" -c "test -r '$file'"; then
         echo "[piprapay] ${file} readable by ${php_user} OK"

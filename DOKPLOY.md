@@ -4,14 +4,37 @@ Repository: `https://github.com/towhidstack/PipraPay` — branch `main`
 
 ## 1. Application settings
 
+### Domain port vs container port (important)
+
+| Layer | Port | Example |
+|-------|------|---------|
+| **Your domain** (browser) | **80 / 443** always | `https://pay.taqwamart.bd` — **never** put `:8080` in the URL |
+| **Dokploy → Application → Port** | Container **internal** listen port | Must match what nginx listens on **inside** the container |
+| **Traefik** | Proxies 443 → container port | You do not expose 8080 publicly |
+
+If Dokploy **Application Port** and the app’s real listen port differ → **500 / 502 / blank page**.
+
+### Nixpacks (what you use now — logs show `runtime=nixpacks`, `port 80`)
+
 | Setting | Value |
 |---------|--------|
-| Build type | **Dockerfile** (recommended — Imagick built in) |
+| Build type | **Nixpacks** (auto-detected) or explicit Nixpacks |
+| Application **Port** in Dokploy | **80** |
+| Env `PORT` | **80** (or omit — Nixpacks defaults to 80) |
+
+Do **not** set Dokploy port to 8080 while still on Nixpacks — the app listens on **80**, so 8080 causes errors.
+
+### Dockerfile (recommended when you switch build type)
+
+| Setting | Value |
+|---------|--------|
+| Build type | **Dockerfile** |
 | Dockerfile path | `Dockerfile` |
 | Docker context | `.` |
-| Port | **8080** |
+| Application **Port** in Dokploy | **8080** |
+| Env `PORT` | **8080** |
 
-Alternative: **Nixpacks** + `nixpacks.toml` (first build 5–15 min).
+Alternative to Dockerfile: keep **Nixpacks** + `nixpacks.toml` (first build 5–15 min) with port **80** only.
 
 ---
 
@@ -41,7 +64,8 @@ If the DB was created earlier without it, reset the database or `ALTER USER ... 
 See `.env.dokploy.example`.
 
 ```env
-PORT=8080
+# Nixpacks: PORT=80  |  Dockerfile: PORT=8080
+PORT=80
 PIPRAPAY_APP_URL=https://pay.taqwamart.bd
 ```
 
@@ -197,8 +221,10 @@ DB_DATABASE=piprapaydb
 DB_USERNAME=mariadb
 DB_PASSWORD=<real password, no quotes>
 DB_PREFIX=pp_
-PORT=8080
+PORT=80
 ```
+
+(Use `PORT=8080` only when Build type is **Dockerfile** and Dokploy Application Port is **8080**.)
 
 Deploy logs should show: `[piprapay] pp-config.php ready (env or volume)`
 
