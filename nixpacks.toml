@@ -15,7 +15,7 @@ nixPkgs = ["...", "php83Extensions.imagick"]
 [phases.install]
 cmds = [
     "mkdir -p pp-media/storage",
-    "chmod +x docker/production-start.sh docker/write-pp-config-from-env.sh 2>/dev/null || true",
+    "chmod +x docker/bootstrap.sh docker/fix-storage-permissions.sh docker/piprapay-config-persist.sh docker/production-start.sh docker/write-pp-config-from-env.sh 2>/dev/null || true",
 ]
 
 [start]

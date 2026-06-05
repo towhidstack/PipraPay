@@ -1827,9 +1827,13 @@
         }
 
         if (! pp_storage_prepare_writable($upload_directory)) {
+            $runtimeHint = pp_runtime_user_label() === 'nobody'
+                ? ' Dokploy: use Build type Dockerfile + named volume at /app/pp-media/storage, then Redeploy.'
+                : ' Redeploy PipraPay after mounting a named volume at /app/pp-media/storage.';
+
             return json_encode([
                 'status' => false,
-                'message' => 'Cannot write to '.$upload_directory.' (PHP runs as '.pp_runtime_user_label().'). Redeploy PipraPay or run: chmod -R 777 /app/pp-media/storage',
+                'message' => 'Cannot write to '.$upload_directory.' (PHP runs as '.pp_runtime_user_label().').'.$runtimeHint,
             ]);
         }
 

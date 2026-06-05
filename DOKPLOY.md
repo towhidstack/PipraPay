@@ -95,40 +95,60 @@ Without volume or env, you will see Step 1 (Requirements) again even though the 
 
 ### Upload permissions reset after every redeploy (logo / QR / favicon fail)
 
-**Why manual `chown` / `chmod` in Terminal does not stick**
+**Symptom:** `Cannot write to /app/pp-media/storage/ (PHP runs as nobody)` — uploads fail; manual `chmod` in Terminal works briefly, then breaks again.
+
+**Why it keeps coming back**
 
 | Cause | What happens |
 |-------|----------------|
-| **Redeploy = new container** | Terminal commands fix only the **current** container. Dokploy/Railway replaces it on redeploy; permissions must be fixed in **entrypoint on start** (we do this automatically). |
-| **Persistent volume owned by `root:root`** | Mount `/app/pp-media/storage` as a **named volume** (Dokploy “Volume”, not a random host path). Bind mounts often stay `755` and `chown` from inside the container may fail on NFS/root_squash. |
-| **Multiple replicas** | If scale &gt; 1, fixing one container does not fix others. Entrypoint runs on **each** replica at start. |
-| **Old entrypoint hid errors** | `2>/dev/null \|\| true` swallowed failed `chown`. Check deploy logs for `[piprapay] storage writable by www-data OK`. |
+| **Nixpacks build (most common)** | Dokploy auto-detects Nixpacks → PHP runs as **`nobody`**, not `www-data`. Logs show `Server starting on port 80` (not `port=8080`). Old Nixpacks start script did **not** run permission fix on boot. |
+| **Redeploy = new container** | Terminal `chmod` fixes only the **current** container. Next redeploy/restart replaces it; fix must run in **bootstrap on start** (now automatic in both Dockerfile and Nixpacks). |
+| **No volume mount** | `/app/pp-media/storage` lives inside the disposable container layer. Redeploy wipes permissions. **You must mount a volume.** |
+| **Bind mount `root:root` 755** | Host paths often ignore `chown` from inside the container. Use a Dokploy **named volume**, not a random host folder. |
+| **Multiple replicas** | Terminal fixes one pod; HTTP may hit another. Scale to **1** while testing. |
 
-**Correct Dokploy setup**
+**Correct Dokploy setup (do all three)**
 
-1. Application → **Volumes** → mount **`/app/pp-media/storage`** (named volume, e.g. `piprapay-media`).
-2. Redeploy PipraPay (do **not** rely on manual Terminal `chown` after each deploy).
-3. Deploy logs must show:
-   ```text
-   [piprapay] chmod 777 on /app/pp-media/storage OK
-   [piprapay] storage writable by www-data OK
-   ```
-4. Verify: `https://pay.taqwamart.bd/pp-health.php` → `"storage_writable_probe": true`
+1. **Build type → Dockerfile** (not Nixpacks). Port **8080**. Dockerfile path: `Dockerfile`.
+2. Application → **Volumes** → mount **`/app/pp-media/storage`** as a **named volume** (e.g. `piprapay-media`).
+3. **Redeploy** (push latest `main` first). Do **not** rely on manual Terminal `chmod` after each deploy.
+
+**After redeploy, logs must show:**
+
+```text
+[piprapay] chmod 777 on /app/pp-media/storage OK
+[piprapay] storage writable by www-data OK
+```
+
+or (Nixpacks):
+
+```text
+[piprapay] storage writable by nobody OK
+```
+
+**Verify in browser:** `https://pay.taqwamart.bd/pp-health.php`
+
+```json
+"storage_writable_probe": true,
+"bootstrap_permissions_ok": true,
+"php_user": "www-data"
+```
+
+(`php_user: "nobody"` means you are still on Nixpacks — switch to Dockerfile.)
 
 **If logs still show ERROR**
 
 - Switch from host bind mount to a **named volume**.
-- Ensure only **one** volume mount at `/app/pp-media/storage` (not the whole `/app`).
-- Scale replicas to **1** while testing, then redeploy.
+- Ensure only **one** volume at `/app/pp-media/storage` (not the whole `/app`).
+- Scale replicas to **1**, redeploy, test upload, then scale back.
 
-**You should not need to run this after every deploy** (entrypoint handles it):
+**Manual chmod is for one-time debug only** (entrypoint/bootstrap handles every start):
 
 ```bash
-chown -R www-data:www-data /app/pp-media/storage
 chmod -R 777 /app/pp-media/storage
 ```
 
-Run manually only once to debug; if it works in Terminal but fails after redeploy, fix the **volume type** in Dokploy.
+If Terminal upload works but fails after **redeploy without changing anything**, you are missing the **volume mount** or using the wrong **build type**.
 
 ### Tables exist but installer Step 2 appears
 

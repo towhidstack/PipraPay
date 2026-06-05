@@ -2,20 +2,7 @@
 # PipraPay production start (Dokploy / Docker / Nixpacks).
 set -e
 
-bash /app/docker/write-pp-config-from-env.sh || true
-
-BUILD_VERSION="unknown"
-if [ -f /app/BUILD_VERSION ]; then
-    BUILD_VERSION="$(tr -d '\n' < /app/BUILD_VERSION)"
-fi
-
-IMAGICK_STATUS="$(php -r 'echo extension_loaded("imagick") ? "enabled" : "DISABLED";')"
-echo "[piprapay] build=${BUILD_VERSION} php=$(php -r 'echo PHP_VERSION;') imagick=${IMAGICK_STATUS}"
-
-if [ "$IMAGICK_STATUS" != "enabled" ]; then
-    echo "[piprapay] ERROR: imagick extension is not loaded" >&2
-    exit 1
-fi
+bash /app/docker/bootstrap.sh
 
 # Nixpacks PHP: prestart.mjs + php-fpm + nginx
 if [ -f /assets/scripts/prestart.mjs ] && [ -f /app/nginx.template.conf ]; then

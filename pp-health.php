@@ -47,6 +47,16 @@ if (function_exists('posix_getpwuid') && function_exists('posix_geteuid')) {
     }
 }
 
+$runtime = 'unknown';
+if (is_file('/etc/supervisor/conf.d/supervisord.conf')) {
+    $runtime = 'dockerfile';
+} elseif (is_file('/assets/scripts/prestart.mjs')) {
+    $runtime = 'nixpacks';
+}
+
+$bootstrapMarker = rtrim($storageReal, '/') . '/.piprapay-perms-ok';
+$bootstrapOk = is_file($bootstrapMarker);
+
 echo json_encode([
     'ok' => extension_loaded('imagick') && $storageProbe,
     'build' => $buildVersion,
@@ -56,8 +66,15 @@ echo json_encode([
     'database_error' => $dbError,
     'sapi' => PHP_SAPI,
     'php_user' => $phpUser,
+    'runtime' => $runtime,
+    'bootstrap_permissions_ok' => $bootstrapOk,
     'storage_path' => $storageReal,
     'storage_exists' => is_dir($storageReal),
     'storage_writable_probe' => $storageProbe,
     'storage_is_writable_flag' => is_dir($storageReal) ? is_writable($storageReal) : false,
+    'hint' => $storageProbe ? null : (
+        $phpUser === 'nobody'
+            ? 'Nixpacks detected (php_user=nobody). Mount named volume at /app/pp-media/storage and redeploy; prefer Dockerfile build on Dokploy.'
+            : 'Mount named volume at /app/pp-media/storage and redeploy PipraPay.'
+    ),
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
