@@ -86,6 +86,11 @@
             return false;
         }
 
+        // Dokploy MariaDB always needs a password; empty $db_pass → "using password: NO" and a white-screen die().
+        if ($pass === '' && getenv('PIPRAPAY_ALLOW_EMPTY_DB_PASSWORD') !== '1') {
+            return false;
+        }
+
         return piprapay_write_db_config_file($host, $port, $user, $pass, $name, $prefix);
     }
 
