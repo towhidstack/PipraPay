@@ -122,7 +122,7 @@
     */
 
     if(!file_exists(__DIR__ . '/.maintenance')){
-        if(file_exists(__DIR__ . '/pp-config.php')){
+        if(piprapay_is_installed()){
             if (isset($requriemntnoneedchecked) && $requriemntnoneedchecked === true) {
                 switch ($route) {
                     case 'install':

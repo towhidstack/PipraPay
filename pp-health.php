@@ -10,8 +10,12 @@ $buildVersion = is_file(__DIR__ . '/BUILD_VERSION')
 $dbOk = null;
 $dbError = null;
 
-if (is_file(__DIR__ . '/pp-config.php')) {
-    require __DIR__ . '/pp-config.php';
+define('PipraPay_INIT', true);
+require __DIR__ . '/pp-content/pp-include/pp-functions.php';
+
+$resolvedConfig = piprapay_resolve_config_file();
+if ($resolvedConfig !== null) {
+    require $resolvedConfig;
     $host = ($db_host ?? '') === 'localhost' ? '127.0.0.1' : ($db_host ?? '');
     try {
         $pdo = new PDO(
@@ -57,8 +61,8 @@ if (is_file('/etc/supervisor/conf.d/supervisord.conf')) {
 $bootstrapMarker = rtrim($storageReal, '/') . '/.piprapay-perms-ok';
 $bootstrapOk = is_file($bootstrapMarker);
 
-$configPath = __DIR__ . '/pp-config.php';
-$configReadable = is_file($configPath) && is_readable($configPath);
+$configPath = piprapay_resolve_config_file() ?? (__DIR__ . '/pp-config.php');
+$configReadable = $resolvedConfig !== null && is_readable($resolvedConfig);
 
 $storageFileCount = 0;
 if (is_dir($storageReal)) {

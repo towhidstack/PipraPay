@@ -76,11 +76,14 @@ PIPRAPAY_APP_URL=https://pay.taqwamart.bd
 
 ### Web installer (default)
 
-1. Deploy without `pp-config.php`  
-2. Open `https://pay.taqwamart.bd/`  
-3. Step 2: DB host = `piprapay-mariadb` (your service name)  
-4. If tables already exist: tick **Remove existing PipraPay tables and re-import**  
-5. Step 3: Admin account  
+1. **Mount a named volume** at `/app/pp-media/storage` (required — `/app` root is read-only on Nixpacks; installer saves config there).  
+2. Deploy without `pp-config.php`  
+3. Open `https://pay.taqwamart.bd/`  
+4. Step 2: DB host = `piprapay-mariadb` (your service name)  
+5. If tables already exist: tick **Remove existing PipraPay tables and re-import**  
+6. Step 3: Admin account  
+
+If Step 2 shows *Could not save database config*: add the volume above and redeploy (do not chmod `/app` manually).
 
 ### Skip installer (optional)
 

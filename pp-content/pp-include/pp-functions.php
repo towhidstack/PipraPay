@@ -12,8 +12,112 @@
 
     $pp_functions_loaded = true;
 
+    function piprapay_app_root(): string {
+        return dirname(__DIR__, 2);
+    }
+
     function piprapay_config_store_path(): string {
-        return dirname(__DIR__, 2) . '/pp-media/storage/.pp-config.php';
+        return piprapay_app_root() . '/pp-media/storage/.pp-config.php';
+    }
+
+    function piprapay_temp_config_store_path(): string {
+        return piprapay_app_root() . '/pp-media/storage/.pp-temp-config.php';
+    }
+
+    function piprapay_ensure_storage_dir(): bool {
+        $dir = dirname(piprapay_config_store_path());
+
+        if (is_dir($dir)) {
+            return true;
+        }
+
+        return @mkdir($dir, 0777, true);
+    }
+
+    function piprapay_resolve_config_file(): ?string {
+        $main = piprapay_app_root() . '/pp-config.php';
+        $stored = piprapay_config_store_path();
+
+        if (is_readable($main)) {
+            return $main;
+        }
+
+        if (is_readable($stored)) {
+            return $stored;
+        }
+
+        return null;
+    }
+
+    function piprapay_resolve_temp_config_file(): ?string {
+        $main = piprapay_app_root() . '/pp-temp-config.php';
+        $stored = piprapay_temp_config_store_path();
+
+        if (is_readable($main)) {
+            return $main;
+        }
+
+        if (is_readable($stored)) {
+            return $stored;
+        }
+
+        return null;
+    }
+
+    function piprapay_is_installed(): bool {
+        return piprapay_resolve_config_file() !== null;
+    }
+
+    /**
+     * Write installer temp config (prefers writable pp-media/storage on Dokploy/Nixpacks).
+     */
+    function piprapay_write_install_temp_config(string $content): bool {
+        piprapay_ensure_storage_dir();
+
+        $paths = [
+            piprapay_temp_config_store_path(),
+            piprapay_app_root() . '/pp-temp-config.php',
+        ];
+
+        $written = false;
+
+        foreach ($paths as $path) {
+            if (@file_put_contents($path, $content) !== false) {
+                $written = true;
+            }
+        }
+
+        return $written;
+    }
+
+    /**
+     * Write final pp-config.php (storage + /app when writable).
+     */
+    function piprapay_write_config_content(string $content): bool {
+        piprapay_ensure_storage_dir();
+
+        $stored = piprapay_config_store_path();
+        $main = piprapay_app_root() . '/pp-config.php';
+        $written = false;
+
+        if (@file_put_contents($stored, $content) !== false) {
+            $written = true;
+        }
+
+        if (@file_put_contents($main, $content) !== false) {
+            $written = true;
+            @copy($main, $stored);
+        }
+
+        return $written;
+    }
+
+    function piprapay_remove_install_temp_config(): void {
+        foreach ([piprapay_temp_config_store_path(), piprapay_app_root() . '/pp-temp-config.php'] as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
     }
 
     /**
@@ -27,8 +131,6 @@
         string $name,
         string $prefix = 'pp_'
     ): bool {
-        $root = dirname(__DIR__, 2);
-        $configFile = $root . '/pp-config.php';
         $content = '<?php' . "\n"
             . '    $db_host = ' . var_export($host, true) . ";\n"
             . '    $db_port = ' . var_export($port, true) . ";\n"
@@ -38,17 +140,7 @@
             . '    $db_prefix = ' . var_export($prefix, true) . ";\n"
             . '?>' . "\n";
 
-        if (@file_put_contents($configFile, $content) === false) {
-            return false;
-        }
-
-        $stored = piprapay_config_store_path();
-        if (!is_dir(dirname($stored))) {
-            @mkdir(dirname($stored), 0755, true);
-        }
-        @copy($configFile, $stored);
-
-        return true;
+        return piprapay_write_config_content($content);
     }
 
     /**
@@ -58,16 +150,20 @@
         $root = dirname(__DIR__, 2);
         $configFile = $root . '/pp-config.php';
 
-        if (is_file($configFile)) {
+        if (is_file($configFile) && is_readable($configFile)) {
             return true;
         }
 
         $stored = piprapay_config_store_path();
-        if (is_readable($stored) && @copy($stored, $configFile)) {
+        if (is_readable($stored)) {
+            if (! is_file($configFile)) {
+                @copy($stored, $configFile);
+            }
+
             return true;
         }
 
-        if (is_file($root . '/pp-temp-config.php')) {
+        if (piprapay_resolve_temp_config_file() !== null) {
             return false;
         }
 

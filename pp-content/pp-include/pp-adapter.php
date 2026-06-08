@@ -155,8 +155,9 @@
         }
     }
 
-    if(file_exists(__DIR__ . '/../../pp-config.php')){
-        require __DIR__ . '/../../pp-config.php';
+    $piprapayConfigFile = piprapay_resolve_config_file();
+    if($piprapayConfigFile !== null){
+        require $piprapayConfigFile;
 
         if($requriemntnoneedchecked == true){
             $path_payment = ($value = get_env('geneal-application-settings-paymentPath')) && $value !== '--' ? $value : 'payment';
@@ -202,8 +203,9 @@
             }
         }
     }else{
-        if(file_exists(__DIR__ . '/../../pp-temp-config.php')){
-            require __DIR__ . '/../../pp-temp-config.php';
+        $piprapayTempConfigFile = piprapay_resolve_temp_config_file();
+        if($piprapayTempConfigFile !== null){
+            require $piprapayTempConfigFile;
         }
     }
 
@@ -263,7 +265,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
     $global_user_2fa = false;
     $global_two_fector_validate = false;
 
-    if(file_exists(__DIR__ . '/../../pp-config.php')){
+    if(piprapay_is_installed()){
         if(getCookie('pp_admin') !== null){
             $pp_admin = escape_string(getCookie('pp_admin'));
 

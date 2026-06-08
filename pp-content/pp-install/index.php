@@ -9,8 +9,8 @@
     }
 
     function piprapay_install_load_temp_config(): bool {
-        $tempFile = __DIR__ . '/../../pp-temp-config.php';
-        if (!is_readable($tempFile)) {
+        $tempFile = piprapay_resolve_temp_config_file();
+        if ($tempFile === null) {
             return false;
         }
         require $tempFile;
@@ -119,9 +119,10 @@
     \$db_prefix = '".addslashes($tablePrefix)."';
 ?>";
 
-            $tempPath = __DIR__ . '/../../pp-temp-config.php';
-            if (file_put_contents($tempPath, $configContent) === false) {
-                throw new Exception('Could not save database config on the server. Check that /app is writable.');
+            if (! piprapay_write_install_temp_config($configContent)) {
+                throw new Exception(
+                    'Could not save database config. Mount a named volume at /app/pp-media/storage in Dokploy, redeploy, then try again.'
+                );
             }
 
             echo json_encode(['status' => 'true', 'title' => 'Imported successfully', 'message' => 'Database connection verified and imported successfully.']);
@@ -209,25 +210,23 @@
                 piprapay_install_json_error('Could not create default currency.');
             }
 
-            $tempFile  = __DIR__ . '/../../pp-temp-config.php';
-            $finalFile = __DIR__ . '/../../pp-config.php';
+            $tempFile = piprapay_resolve_temp_config_file();
+            if ($tempFile === null) {
+                piprapay_install_json_error('Failed to read temp config file.');
+            }
 
             $configContent = file_get_contents($tempFile);
             if ($configContent === false) {
                 piprapay_install_json_error('Failed to read temp config file.');
             }
 
-            if (file_put_contents($finalFile, $configContent) === false) {
-                piprapay_install_json_error('Failed to create final config file. Ensure /app is writable by PHP.');
+            if (! piprapay_write_config_content($configContent)) {
+                piprapay_install_json_error(
+                    'Failed to create config file. Mount a named volume at /app/pp-media/storage in Dokploy, redeploy, then try again.'
+                );
             }
 
-            $storedConfig = __DIR__ . '/../../pp-media/storage/.pp-config.php';
-            if (!is_dir(dirname($storedConfig))) {
-                @mkdir(dirname($storedConfig), 0755, true);
-            }
-            @copy($finalFile, $storedConfig);
-
-            @unlink($tempFile);
+            piprapay_remove_install_temp_config();
 
             echo json_encode(['status' => 'true', 'message' => 'Install Completed.']);
         } catch (Throwable $e) {
@@ -641,7 +640,7 @@
         });
 
         <?php
-           if(file_exists(__DIR__ . '/../../pp-temp-config.php')){
+           if(piprapay_resolve_temp_config_file() !== null){
         ?>
               showStep(3);
         <?php
