@@ -20,3 +20,4 @@ cmds = [
 
 [start]
 cmd = "bash /app/docker/production-start.sh"
+
